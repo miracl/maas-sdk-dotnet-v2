@@ -1,0 +1,7 @@
+﻿{  
+  "issuer": "http://nothing",
+  "token_endpoint": "http://nothing/token",
+  "jwks_uri": "http://nothing/oidc/certs",
+  "userinfo_endpoint": "http://nothing/user",
+  "authorization_endpoint": "http://nothing/authorize"
+}

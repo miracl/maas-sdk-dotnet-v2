@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthentication", "MiraclAuthentication\MiraclAuthentication.csproj", "{F3E1857B-336C-471B-B8AA-18781FC407AD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClientLibrary", "ClientLibrary", "{76D0C616-F808-42FA-BEB0-06432A0D6FD1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{BAF920D7-5625-4A74-88F1-1A40173146AC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthenticationTests", "MiraclAuthenticationTests\MiraclAuthenticationTests.csproj", "{D4801C21-134A-4704-8909-B86810EBE7D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthenticationApp", "Sample\MiraclAuthenticationApp.csproj", "{F078FEEC-BA82-45ED-B9E6-086E396816BA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F1945AEF-8BE1-4EAC-BBC9-289477A63EBB}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README.md = README.md
+		VERSION = VERSION
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F3E1857B-336C-471B-B8AA-18781FC407AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3E1857B-336C-471B-B8AA-18781FC407AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3E1857B-336C-471B-B8AA-18781FC407AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3E1857B-336C-471B-B8AA-18781FC407AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4801C21-134A-4704-8909-B86810EBE7D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4801C21-134A-4704-8909-B86810EBE7D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4801C21-134A-4704-8909-B86810EBE7D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4801C21-134A-4704-8909-B86810EBE7D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F3E1857B-336C-471B-B8AA-18781FC407AD} = {76D0C616-F808-42FA-BEB0-06432A0D6FD1}
+		{D4801C21-134A-4704-8909-B86810EBE7D8} = {76D0C616-F808-42FA-BEB0-06432A0D6FD1}
+		{F078FEEC-BA82-45ED-B9E6-086E396816BA} = {BAF920D7-5625-4A74-88F1-1A40173146AC}
+	EndGlobalSection
+EndGlobal

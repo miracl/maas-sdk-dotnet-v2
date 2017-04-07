@@ -1,13 +1,11 @@
 ﻿using IdentityModel;
 using IdentityModel.Client;
-using Microsoft.IdentityModel.Protocols;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Security.Claims;
-using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using SystemClaims = System.Security.Claims;
 
@@ -81,7 +79,7 @@ namespace Miracl
         public string Nonce
         {
             get;
-            private set;
+            internal set;
         }
 
         /// <summary>
@@ -196,8 +194,12 @@ namespace Miracl
 
             client.Timeout = this.Options.BackchannelTimeout;
             client.AuthenticationStyle = AuthenticationStyle.PostValues;
-            
+
             this.accessTokenResponse = await client.RequestAuthorizationCodeAsync(code, redirectUri);
+            if (this.accessTokenResponse == null || !IsNonceValid(this.accessTokenResponse.IdentityToken))
+            {
+                throw new ArgumentException("Invalid nonce!");
+            }
             return this.accessTokenResponse;
         }
 
@@ -245,7 +247,7 @@ namespace Miracl
             {
                 throw new InvalidOperationException("No Options for authentication! ValidateAuthorization method should be called first!");
             }
-            
+
             await FillClaimsAsync(response);
             return new ClaimsIdentity(this.claims,
                     Options.AuthenticationType,
@@ -271,13 +273,42 @@ namespace Miracl
 
             this.callbackUrl = baseUri.TrimEnd('/') + this.Options.CallbackPath;
 
-            var authRequest = new AuthorizeRequest(doc.AuthorizeEndpoint); 
+            var authRequest = new AuthorizeRequest(doc.AuthorizeEndpoint);
             return authRequest.CreateAuthorizeUrl(clientId: this.Options.ClientId,
                                                     responseType: Constants.Code,
                                                     scope: Constants.Scope,
                                                     redirectUri: callbackUrl,
                                                     state: this.State,
                                                     nonce: this.Nonce);
+        }
+
+        private bool IsNonceValid(string identityToken)
+        {
+            if (string.IsNullOrEmpty(identityToken))
+            {
+                return false;
+            }
+
+            var idToken = ParseJwt(identityToken);
+            var nonce = idToken.GetValue("nonce");
+            if (nonce == null || string.IsNullOrEmpty(nonce.ToString()))
+            {
+                return false;
+            }
+
+            return nonce.ToString().Equals(this.Nonce);
+        }
+
+        private JObject ParseJwt(string token)
+        {
+            if (!token.Contains("."))
+            {
+                throw new ArgumentException("Wrong token data!");
+            }
+
+            var parts = token.Split('.');
+            var part = Encoding.UTF8.GetString(Base64Url.Decode(parts[1]));
+            return JObject.Parse(part);
         }
 
         private async Task LoadOpenIdConnectConfigurationAsync()
@@ -288,7 +319,8 @@ namespace Miracl
                 var discoveryClient = this.Options.BackchannelHttpHandler != null
                     ? new DiscoveryClient(discoveryAddress + Constants.DiscoveryPath, this.Options.BackchannelHttpHandler)
                     : new DiscoveryClient(discoveryAddress + Constants.DiscoveryPath);
-                if (this.requireHttps == false) {
+                if (this.requireHttps == false)
+                {
                     discoveryClient.Policy = new DiscoveryPolicy { RequireHttps = false };
                 }
                 doc = await discoveryClient.GetAsync();
@@ -304,7 +336,7 @@ namespace Miracl
 
             this.claims = new List<SystemClaims.Claim>();
             this.claims.Clear();
-            
+
             this.claims.AddRange(await GetUserInfoClaimsAsync(response.AccessToken));
             this.claims.Add(new Claim(Constants.AccessToken, response.AccessToken));
             this.claims.Add(new Claim(Constants.ExpiresAt, (DateTime.UtcNow.ToEpochTime() + response.ExpiresIn).ToDateTimeFromEpoch().ToString()));

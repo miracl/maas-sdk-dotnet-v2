@@ -80,7 +80,7 @@ namespace MiraclAuthenticationTests
         {
             MiraclClient client = new MiraclClient();
             client.doc = new DiscoveryResponse("");
-            Assert.That(() => Task.Run(async () => await client.GetAuthorizationRequestUrlAsync(AuthorizeEndpoint)),
+            Assert.That(() => client.GetAuthorizationRequestUrlAsync(AuthorizeEndpoint),
                 Throws.TypeOf<ArgumentNullException>().And.Property("ParamName").EqualTo("MiraclAuthenticationOptions should be set!"));
         }
 
@@ -151,7 +151,7 @@ namespace MiraclAuthenticationTests
                 SetDiscovery(client);
             }
 
-            var response = Task.Run(async () => await client.ValidateAuthorization(nvc, "http://nothing/login")).Result;
+            var response = client.ValidateAuthorization(nvc, "http://nothing/login").Result;
             Assert.That(response, Is.Not.Null);
             Assert.That(response, Has.Property("AccessToken").EqualTo("MockToken"));
             Assert.That(response, Has.Property("ExpiresIn").EqualTo(600));
@@ -159,7 +159,7 @@ namespace MiraclAuthenticationTests
             Assert.That(response, Has.Property("RefreshToken").EqualTo("MockRefresh"));
             Assert.That(response, Has.Property("TokenType").EqualTo("Bearer"));
 
-            var identity = Task.Run(async () => await client.GetIdentity(response)).Result;
+            var identity = client.GetIdentity(response).Result;
             Assert.That(identity, Is.Not.Null);
             Assert.That(identity, Has.Property("IsAuthenticated").True);
             Assert.That(identity, Has.Property("AuthenticationType").EqualTo("MIRACL"));
@@ -202,7 +202,6 @@ namespace MiraclAuthenticationTests
         public void Test_ValidateAuthorization_MissingCode()
         {
             NameValueCollection nameValueCollection;
-
             nameValueCollection = new NameValueCollection();
             nameValueCollection[Constants.State] = "state";
 
@@ -253,42 +252,58 @@ namespace MiraclAuthenticationTests
         public void Test_ValidateAuthorization_UseCallbackUrl()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"MockIdToken\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
+            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\""+ValidIdToken+"\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
             mockHttp.When(UserEndpoint).Respond("application/json", "{\"sub\":\"noone@miracl.com\"}");
 
             MiraclAuthenticationOptions options = new MiraclAuthenticationOptions();
             options.BackchannelHttpHandler = mockHttp;
+            options.ClientId = "MockClient";
+            options.ClientSecret = "MockSecret";
             MiraclClient client = new MiraclClient(options);
             NameValueCollection nvc = new NameValueCollection();
             nvc["code"] = "MockCode";
             nvc["state"] = "MockState";
             client.State = nvc["state"];
+            client.Nonce = Nonce;
             client.callbackUrl = "/CallbackPath";
-
-            var response = client.ValidateAuthorization(nvc);
-            Assert.That(response, Is.Not.Null);
-        }
-
-        [Test]
-        public void Test_ValidateAuthorization_InvalidNonce()
-        {
-            var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"\"}");
-
-            MiraclAuthenticationOptions options = new MiraclAuthenticationOptions();
-            options.BackchannelHttpHandler = mockHttp;
-            MiraclClient client = new MiraclClient(options);
-            client.Options.ClientId = "MockClient";
-            client.Options.ClientSecret = "MockSecret";
             SetDiscovery(client);
 
-            NameValueCollection nvc = new NameValueCollection();
-            nvc["code"] = "MockCode";
-            nvc["state"] = "MockState";
-            client.State = nvc["state"];
-            client.callbackUrl = "/CallbackPath";
+            var response = client.ValidateAuthorization(nvc).Result;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.AccessToken, Is.EqualTo("MockToken"));
+        }
+        
+        [Test]
+        public void Test_ValidateAuthorizationCode()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"" + ValidIdToken + "\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
 
-            Assert.That(() => client.ValidateAuthorization(nvc),
+            MiraclAuthenticationOptions options = new MiraclAuthenticationOptions();
+            options.ClientId = "MockClient";
+            options.ClientSecret = "MockSecret";
+            options.BackchannelHttpHandler = mockHttp;
+            MiraclClient client = new MiraclClient(options);
+            client.callbackUrl = "/CallbackPath";
+            client.Nonce = Nonce;
+            SetDiscovery(client);
+
+            var response = client.ValidateAuthorizationCode("MockCode", "wrong@mail.me").Result;
+            Assert.That(response, Is.Null);
+
+            response = client.ValidateAuthorizationCode("MockCode", "petya.koleva@miracl.com").Result;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.RefreshToken, Is.EqualTo("MockRefresh"));
+            Assert.That(response.AccessToken, Is.EqualTo("MockToken"));
+
+            mockHttp.Clear();
+            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");            
+            Assert.That(() => client.ValidateAuthorizationCode("MockCode", "empty@id.token"),
+                Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Invalid nonce!"));
+            
+            mockHttp.Clear();
+            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
+            Assert.That(() => client.ValidateAuthorizationCode("MockCode", "empty@id.token"),
                 Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Invalid nonce!"));
         }
 
@@ -317,7 +332,7 @@ namespace MiraclAuthenticationTests
         public void Test_TryGetValue()
         {
             var client = new MiraclClient();
-            client.userInfo = new IdentityModel.Client.UserInfoResponse("{\"sub\":\"noone@miracl.com\"}");
+            client.userInfo = new UserInfoResponse("{\"sub\":\"noone@miracl.com\"}");
             Assert.That(client.TryGetValue("sub"), Is.EqualTo("noone@miracl.com"));
         }
 
@@ -370,15 +385,10 @@ namespace MiraclAuthenticationTests
             nvc["state"] = "MockState";
             client.State = nvc["state"];
             client.Nonce = Nonce;
-
-            // as it's mock, we don't have discovery and have to set the tokenendpoints manually
-            if (client.doc == null)
-            {
-                SetDiscovery(client);
-            }
+            SetDiscovery(client);
 
             Assert.That(() => client.ValidateAuthorization(nvc, "http://nothing/login"),
-                Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Wrong token data!"));
+                 Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Wrong token data!"));
 
             mockHttp.Clear();
             var noNonce = "33.eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxLTA4LTIwMTYifQ";

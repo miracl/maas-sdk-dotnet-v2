@@ -118,6 +118,25 @@ Note that the redirect uri, if not explicitly specified in the `MiraclAuthentica
 
 * `MiraclAuthenticationApp` demonstrates the usage of `MiraclClient` to authenticate to the MIRACL server
 
+## Sample Endpoints
+The sample handles the following requests in order to serve as an authenticator for a mobile app:
+* POST /authzurl
+ This returns an http status of OK and data in the following json format:
+```
+{
+    "authorizeURL": "<- The authorization url ->"
+} 
+```
+* POST /authtoken
+This endpoint receives the Authorization Code and User ID in the following format:
+```
+{
+    "code":"<- the authorization code to validate with ->",
+    "userID":"<- the authorized email to be verified ->"
+}
+```
+The http status code of the response corresponds to the status of the authentication. 
+
 ## Setting-up outbound HTTP Proxy Server
 
 In order to make the SDK and the Sample Web App work using a proxy server, you should setup such using the Windows Internet configuration options:

@@ -18,6 +18,12 @@ namespace WebApplication4.Controllers
 
         public async Task<ActionResult> Index()
         {
+            ViewBag.AuthorizationUri = await GetUrl(Request.Url.ToString());
+            return View();
+        }
+
+        internal static async Task<string> GetUrl(string url)
+        {
             if (Client == null)
             {
                 Client = new MiraclClient(new MiraclAuthenticationOptions
@@ -28,11 +34,9 @@ namespace WebApplication4.Controllers
                 });
             }
 
-            var url = await Client.GetAuthorizationRequestUrlAsync(Request.Url.ToString());
-            ViewBag.AuthorizationUri = url;
-            return View();
+            return await Client.GetAuthorizationRequestUrlAsync(url);
         }
-
+        
         [HttpPost]
         public ActionResult Index(string Logout)
         {

@@ -1,8 +1,5 @@
 # maas-sdk-dotnet-v2
 
-[![Build Status](https://travis-ci.com/miracl/maas-sdk-dotnet-v2.svg?token=GqZNFT7KpaH8DWtT42qq&branch=master)](https://travis-ci.com/miracl/maas-sdk-dotnet-v2)
-[![Master Coverage Status](https://coveralls.io/repos/miracl/maas-sdk-dotnet-v2/badge.svg?branch=master&service=github)](https://coveralls.io/github/miracl/maas-sdk-dotnet-v2?branch=master)
-
 * **category**:    SDK
 * **copyright**:   2017 MIRACL UK LTD
 * **license**:     ASL 2.0 - http://www.apache.org/licenses/LICENSE-2.0

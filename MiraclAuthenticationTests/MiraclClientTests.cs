@@ -16,12 +16,15 @@ namespace MiraclAuthenticationTests
     [TestFixture]
     public class MiraclClientTests
     {
-        private const string Endpoint = "http://nothing";
-        private const string TokenEndpoint = "http://nothing/token";
-        private const string UserEndpoint = "http://nothing/user";
-        private const string AuthorizeEndpoint = "http://nothing/authorize";
-        private const string ValidIdToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxLTA4LTIwMTYifQ.eyJhbXIiOlsidG9rZW4iXSwiYXVkIjoia2phbzBoOHhiczVzaiIsImV4cCI6MTQ5MTQ3MjI4NywiaWF0IjoxNDkxNDcxMzg3LCJpc3MiOiJodHRwczovL2FwaS5zdGcubWlyYWNsLm5ldCIsIm5vbmNlIjoiZTJkNzQ0ODA0NDVmOWI0YmExNWY5ZTBhYjY2NjlmYzAiLCJzdWIiOiJwZXR5YS5rb2xldmFAbWlyYWNsLmNvbSJ9.KRcC6NvEMll6Nusn-cN3Z56k7bN18mE4utvU3cN6ngKrDpQBw2-PEnP4I5ssyUlKRFcnI77RJOaY_L57Zzze4xyRTacufOuYCGAnnaau-_1D_TcITQAySNShM2D8iOvI9tx_5kX77I9j3YLe5ROwG7B7cFcp0CWnpWB9FaiA7yguQYsSTK8dAi8LqXucwBwiecVO956MXQbBQpV8pekoZ3rqm1Ky9NZ0HrgX1WFu3BhKVxoldVXaZWTKwYBXsvYDMDUi_SOJ555OsG9VkyxXVBaPCZXn45RRy1UjRm2kYQlnCJVBTF84qXQtpps0Or6T_a-nEhHpobo8MerRFYQTVw";
-        private const string Nonce = "e2d74480445f9b4ba15f9e0ab6669fc0";
+        private const string Endpoint = "https://api.dev.miracl.net";
+        private const string TokenEndpoint = "https://api.dev.miracl.net/oidc/token";
+        private const string UserEndpoint = "https://api.dev.miracl.net/oidc/userinfo";
+        private const string AuthorizeEndpoint = "https://api.dev.miracl.net/authorize";
+        private const string CertUri = "https://api.dev.miracl.net/oidc/certs";
+        private const string ValidClientId = "gnuei07bcyee8";
+        private const string ValidAccessToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjMxLTA3LTIwMTYifQ.eyJjaWQiOiJnbnVlaTA3YmN5ZWU4IiwiZXhwIjoxNDkzMDE2NDk5LCJpc3MiOiJodHRwczovL2FwaS5kZXYubWlyYWNsLm5ldCIsInNjcCI6WyJvcGVuaWQiLCJwcm9maWxlIiwiZW1haWwiXSwic3ViIjoicGV0eWEua29sZXZhQG1pcmFjbC5jb20ifQ.MKPhkQ6-QbPIuD68cfy6QmuqelFUs1yUmW2dZn3ovjC8BkdCdgzRzysAvdTQCGe8F-WRTIAdmY00rXmC-z4_VVG1yESdOP2eCOD7zFmIXF9m5OTKMJJEaG6SOUoko5jypohmDk4MuLjOvfMOhXQfWKqLxkliMmM2e8J1FjSY7sF6Azg0Pq_mqK-mznIofbzR7tnA22XmlF_GRqYyoRpUEtkzU2ydoU9oGSJrwtwTeN1vXlzEwSvj65mVkuP4dIqJ5fmYstgTyKlzkwe8wFDHhB3Px-89lh5JRYKoY0nbDIUOc0RA0dKFnnFX3P0Cp9kp2QOwXYdRLmdhvhn7IeJjjw";
+        private const string ValidIdToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjMxLTA3LTIwMTYifQ.eyJhbXIiOlsidG9rZW4iXSwiYXVkIjoiZ251ZWkwN2JjeWVlOCIsImV4cCI6MTQ5MzAxNjc3NSwiaWF0IjoxNDkzMDE1ODc1LCJpc3MiOiJodHRwczovL2FwaS5kZXYubWlyYWNsLm5ldCIsIm5vbmNlIjoiODBmY2Q1M2QzNTc2NjIxZGE2MjNlMWZkYmU2YzdjNTE0MTZhOTc1YTNlNTM4OThjY2IwYmRlZWIwODRiZTQyZiIsInN1YiI6InBldHlhLmtvbGV2YUBtaXJhY2wuY29tIn0.CTQu9bx7vCV6pZvtDhEJTFjeasMJoZtbq93vFj2nwVODaGj5Ajp9ZYZvhD7eeYtOBzBH0rOAjNc_348bZXjiqi3IdpEMCTiQz0dPqxTlywUjwM0HCMQ0C0TIwUh4f8Os0rthF1a1yYy_WgL7FgFsmb12xwTwt_TXrKHqbHXV-eX8ip0GCQgao9B1VC3Jj4NEfEXuUSq2nexEx-p_H9LgqbNBro3i_kPoP7C3wfiSFS30qDDUKZLp3SeW90-ErcNQKmU7rukvujeCpeziYlycLyeRTPVmAOTMEyO4ABQyk4KTl_w9P2O8AXW6a2B7nfjGAQGVT_m9Z_56yzgJoJ9KRg";
+        private const string Nonce = "80fcd53d3576621da623e1fdbe6c7c51416a975a3e53898ccb0bdeeb084be42f";
 
         [Test]
         public void Test_AuthorizationRequestUrl()
@@ -48,8 +51,13 @@ namespace MiraclAuthenticationTests
             var discoFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "documents", "discovery.json");
             var document = File.ReadAllText(discoFileName);
 
+            var jwksFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "documents", "discovery_jwks.json");
+            var jwks = File.ReadAllText(jwksFileName);
+
             var _successHandler = new MockHttpMessageHandler();
-            _successHandler.When("*").Respond("application/json", document);
+            _successHandler.When(Endpoint + "/.well-known/openid-configuration").Respond("application/json", document);
+            _successHandler.When(CertUri).Respond("application/json", jwks);
+
             var discoveryClient = new DiscoveryClient(Endpoint, _successHandler);
             discoveryClient.Policy = new DiscoveryPolicy { RequireHttps = false };
             client.doc = discoveryClient.GetAsync().Result;
@@ -57,6 +65,8 @@ namespace MiraclAuthenticationTests
             Assert.That(client.doc.TryGetValue(OidcConstants.Discovery.AuthorizationEndpoint), Is.Not.Null);
             Assert.That(client.doc.TryGetValue("unknown"), Is.Null);
             Assert.AreEqual(client.doc.TryGetString(OidcConstants.Discovery.AuthorizationEndpoint), AuthorizeEndpoint);
+            Assert.That(client.doc.KeySet.Keys.Count, Is.EqualTo(1));
+            Assert.That(client.doc.KeySet.Keys[0].Kty, Is.EqualTo("RSA"));
         }
 
         [Test]
@@ -122,16 +132,16 @@ namespace MiraclAuthenticationTests
         public void Test_Authorization()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"" + ValidIdToken + "\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
-            mockHttp.When(UserEndpoint).Respond("application/json", "{\"sub\":\"noone@miracl.com\"}");
+            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"" + ValidAccessToken + "\",\"expires_in\":900,\"id_token\":\"" + ValidIdToken + "\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
+            mockHttp.When(UserEndpoint).Respond("application/json", "{\"email\":\"petya.koleva@miracl.com\",\"sub\":\"petya.koleva@miracl.com\"}");
 
             MiraclAuthenticationOptions options = new MiraclAuthenticationOptions();
-            options.ClientId = "MockClient";
-            options.ClientSecret = "MockSecret";
+            options.ClientId = ValidClientId;
+            options.ClientSecret = "q0Hog6cY2pAt3V-0MPXgRfcM9FTNT5gFGr7JvxRXce4";
             options.BackchannelTimeout = TimeSpan.FromMinutes(1);
             options.BackchannelHttpHandler = mockHttp;
             options.PlatformAPIAddress = Endpoint;
-            options.CallbackPath = new Microsoft.Owin.PathString("/CallbackPath");
+            options.CallbackPath = new Microsoft.Owin.PathString("/login");
             options.StateDataFormat = new PropertiesDataFormat(null);
 
             MiraclClient client = new MiraclClient(options);
@@ -140,21 +150,18 @@ namespace MiraclAuthenticationTests
 
             // Inject the handler or client into your application code
             NameValueCollection nvc = new NameValueCollection();
-            nvc["code"] = "MockCode";
+            nvc["code"] = "59Mu-PxYsj--mOId9etkOw";
             nvc["state"] = "MockState";
             client.State = nvc["state"];
             client.Nonce = Nonce;
 
             // as it's mock, we don't have discovery and have to set the tokenendpoints manually
-            if (client.doc == null)
-            {
-                SetDiscovery(client);
-            }
+            SetDiscovery(client);
 
             var response = client.ValidateAuthorization(nvc, "http://nothing/login").Result;
             Assert.That(response, Is.Not.Null);
-            Assert.That(response, Has.Property("AccessToken").EqualTo("MockToken"));
-            Assert.That(response, Has.Property("ExpiresIn").EqualTo(600));
+            Assert.That(response, Has.Property("AccessToken").EqualTo(ValidAccessToken));
+            Assert.That(response, Has.Property("ExpiresIn").EqualTo(900));
             Assert.That(response, Has.Property("IdentityToken").EqualTo(ValidIdToken));
             Assert.That(response, Has.Property("RefreshToken").EqualTo("MockRefresh"));
             Assert.That(response, Has.Property("TokenType").EqualTo("Bearer"));
@@ -164,8 +171,9 @@ namespace MiraclAuthenticationTests
             Assert.That(identity, Has.Property("IsAuthenticated").True);
             Assert.That(identity, Has.Property("AuthenticationType").EqualTo("MIRACL"));
             Assert.That(identity, Has.Property("Claims").Not.Null);
-            Assert.That(((Claim)(identity.Claims.First())).Type, Is.EqualTo("sub"));
-            Assert.That(((Claim)(identity.Claims.First())).Value, Is.EqualTo("noone@miracl.com"));
+            Assert.That(((Claim)(identity.Claims.First())).Type, Is.EqualTo("email"));
+            Assert.That(((Claim)(identity.Claims.First())).Value, Is.EqualTo("petya.koleva@miracl.com"));
+            Assert.IsTrue(identity.Claims.Where((a) => a.Type.Equals("sub") & a.Value.Equals("petya.koleva@miracl.com")).Count() > 0);
         }
 
         private static void IsClientClear(MiraclClient client, bool isAuthorized)
@@ -201,11 +209,10 @@ namespace MiraclAuthenticationTests
         [Test]
         public void Test_ValidateAuthorization_MissingCode()
         {
-            NameValueCollection nameValueCollection;
-            nameValueCollection = new NameValueCollection();
-            nameValueCollection[Constants.State] = "state";
+            NameValueCollection nvc = new NameValueCollection();
+            nvc[Constants.State] = "state";
 
-            Assert.That(() => new MiraclClient(new MiraclAuthenticationOptions()).ValidateAuthorization(nameValueCollection),
+            Assert.That(() => new MiraclClient(new MiraclAuthenticationOptions()).ValidateAuthorization(nvc),
                 Throws.TypeOf<ArgumentException>().And.Property("ParamName").EqualTo("requestQuery"));
         }
 
@@ -252,12 +259,12 @@ namespace MiraclAuthenticationTests
         public void Test_ValidateAuthorization_UseCallbackUrl()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\""+ValidIdToken+"\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
+            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"" + ValidIdToken + "\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
             mockHttp.When(UserEndpoint).Respond("application/json", "{\"sub\":\"noone@miracl.com\"}");
 
             MiraclAuthenticationOptions options = new MiraclAuthenticationOptions();
             options.BackchannelHttpHandler = mockHttp;
-            options.ClientId = "MockClient";
+            options.ClientId = ValidClientId;
             options.ClientSecret = "MockSecret";
             MiraclClient client = new MiraclClient(options);
             NameValueCollection nvc = new NameValueCollection();
@@ -272,7 +279,18 @@ namespace MiraclAuthenticationTests
             Assert.That(response, Is.Not.Null);
             Assert.That(response.AccessToken, Is.EqualTo("MockToken"));
         }
-        
+
+        [Test]
+        public void Test_ValidateAuthorization_Error()
+        {
+            NameValueCollection nvc= new NameValueCollection();
+            nvc[Constants.State] = "state";
+            nvc[Constants.Error] = "some error";
+
+            Assert.That(() => new MiraclClient(new MiraclAuthenticationOptions()).ValidateAuthorization(nvc),
+                Throws.TypeOf<Exception>().And.Message.EqualTo("some error"));
+        }
+
         [Test]
         public void Test_ValidateAuthorizationCode()
         {
@@ -280,7 +298,7 @@ namespace MiraclAuthenticationTests
             mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"" + ValidIdToken + "\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
 
             MiraclAuthenticationOptions options = new MiraclAuthenticationOptions();
-            options.ClientId = "MockClient";
+            options.ClientId = ValidClientId;
             options.ClientSecret = "MockSecret";
             options.BackchannelHttpHandler = mockHttp;
             MiraclClient client = new MiraclClient(options);
@@ -297,14 +315,14 @@ namespace MiraclAuthenticationTests
             Assert.That(response.AccessToken, Is.EqualTo("MockToken"));
 
             mockHttp.Clear();
-            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");            
+            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
             Assert.That(() => client.ValidateAuthorizationCode("MockCode", "empty@id.token"),
-                Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Invalid nonce!"));
-            
+                Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Invalid token data!"));
+
             mockHttp.Clear();
             mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
             Assert.That(() => client.ValidateAuthorizationCode("MockCode", "empty@id.token"),
-                Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Invalid nonce!"));
+                Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Invalid token data!"));
         }
 
         [Test]
@@ -395,6 +413,11 @@ namespace MiraclAuthenticationTests
             mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"" + noNonce + "\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
             Assert.That(() => client.ValidateAuthorization(nvc, "http://nothing/login"),
                 Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Invalid nonce!"));
+
+            mockHttp.Clear();
+            mockHttp.When(TokenEndpoint).Respond("application/json", "{\"access_token\":\"MockToken\",\"expires_in\":600,\"id_token\":\"" + "eyJhbGciOiJSUzI1NiIsImtpZCI6IjMxLTA3LTIwMTYifQ.eyJhbXIiOlsidG9rZW4iXSwiYXVkIjoiZ251ZWkwN2JjeWVlOCIsImV4cCI6MTQ5MzAxNjc3NSwiaWF0IjoxNDkzMDE1ODc1LCJpc3MiOiJodHRwczovL2FwaS5kZXYubWlyYWNsLm5ldCIsIm5vbmNlIjoiODBmY2Q1M2QzNTc2NjIxZGE2MjNlMWZkYmU2YzdjNTE0MTZhOTc1YTNlNTM4OThjY2IwYmRlZWIwODRiZTQyZiIsInN1YiI6InBldHlhLmtvbGV2YUBtaXJhY2wuY29tIn0" + "\",\"refresh_token\":\"MockRefresh\",\"scope\":\"openid\",\"token_type\":\"Bearer\"}");
+            Assert.That(() => client.ValidateAuthorization(nvc, "http://nothing/login"),
+                Throws.TypeOf<ArgumentException>().And.Message.EqualTo("Invalid token format"));
         }
     }
 }

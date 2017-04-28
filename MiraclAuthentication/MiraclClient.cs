@@ -347,7 +347,7 @@ namespace Miracl
             SecurityToken securityToken;
             var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
             var jwt = jwtSecurityTokenHandler.ReadToken(idToken) as JwtSecurityToken;
-            var rsaPublicKey = CreatePublicKey();
+            var rsaPublicKey = CreatePublicKey(kid);
 
             var prms = new TokenValidationParameters()
             {
@@ -366,18 +366,18 @@ namespace Miracl
             return jwtSecurityTokenHandler.ValidateToken(idToken, prms, out securityToken);
         }
 
-        public RSACryptoServiceProvider CreatePublicKey()
+        public RSACryptoServiceProvider CreatePublicKey(string kid)
         {
             var cryptoProvider = new RSACryptoServiceProvider();
             var keys = new Dictionary<string, RSA>();
             foreach (var key in doc.KeySet.Keys)
             {
-                if (key.Kty == "RSA")
+                if (key.Kty == "RSA" && key.Kid.Equals(kid))
                 {
                     cryptoProvider.ImportParameters(new RSAParameters()
                     {
                         Exponent = Base64UrlEncoder.DecodeBytes(key.E),
-                        Modulus = Base64UrlEncoder.DecodeBytes(key.N),
+                        Modulus = Base64UrlEncoder.DecodeBytes(key.N)
                     });
                 }
             }

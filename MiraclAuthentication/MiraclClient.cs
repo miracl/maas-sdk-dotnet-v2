@@ -374,7 +374,6 @@ namespace Miracl
         private RSACryptoServiceProvider CreatePublicKey(string kid)
         {
             var cryptoProvider = new RSACryptoServiceProvider();
-            var keys = new Dictionary<string, RSA>();
             foreach (var key in doc.KeySet.Keys)
             {
                 if (key.Kty == "RSA" && key.Kid.Equals(kid))

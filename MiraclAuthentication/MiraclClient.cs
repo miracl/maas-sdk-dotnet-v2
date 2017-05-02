@@ -331,18 +331,8 @@ namespace Miracl
         }
 
         private ClaimsPrincipal ValidateIdentityToken(string idToken)
-        {
-            string[] parts = idToken.Split('.');
-            if (parts.Length != 3)
-            {
-                // signed JWT should have header, payload and signature part, separated with a dot
-                throw new ArgumentException("Invalid token format");
-            }
-
-            string header = parts[0];
-            var part = Encoding.UTF8.GetString(Base64Url.Decode(header));
-            var headerData = JObject.Parse(part);
-            var kid = headerData["kid"].ToString();
+        {            
+            string kid = GetKey(idToken);
 
             SecurityToken securityToken;
             var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
@@ -366,7 +356,22 @@ namespace Miracl
             return jwtSecurityTokenHandler.ValidateToken(idToken, prms, out securityToken);
         }
 
-        public RSACryptoServiceProvider CreatePublicKey(string kid)
+        private static string GetKey(string jwt)
+        {
+            string[] parts = jwt.Split('.');
+            if (parts.Length != 3)
+            {
+                // signed JWT should have header, payload and signature part, separated with a dot
+                throw new ArgumentException("Invalid token format");
+            }
+
+            string header = parts[0];
+            var part = Encoding.UTF8.GetString(Base64Url.Decode(header));
+            var headerData = JObject.Parse(part);
+            return headerData["kid"].ToString();
+        }
+
+        private RSACryptoServiceProvider CreatePublicKey(string kid)
         {
             var cryptoProvider = new RSACryptoServiceProvider();
             var keys = new Dictionary<string, RSA>();

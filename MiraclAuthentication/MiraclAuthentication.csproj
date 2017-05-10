@@ -79,6 +79,7 @@
     <Compile Include="MiraclAuthenticationOptions.cs" />
     <Compile Include="MiraclClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UnitTestDetector.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

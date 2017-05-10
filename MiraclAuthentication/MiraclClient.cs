@@ -4,7 +4,9 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using SystemClaims = System.Security.Claims;
@@ -23,6 +25,7 @@ namespace Miracl
         internal bool requireHttps = true;
         private TokenResponse accessTokenResponse;
         private List<SystemClaims.Claim> claims;
+        private ClaimsPrincipal idTokenClaims;
         #endregion
 
         #region C'tor
@@ -173,6 +176,12 @@ namespace Miracl
 
             string code = requestQuery[Constants.Code];
             string returnedState = requestQuery[Constants.State];
+            string error = requestQuery[Constants.Error];
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                throw new Exception(error);
+            }
 
             if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(returnedState))
             {
@@ -184,7 +193,6 @@ namespace Miracl
             {
                 throw new ArgumentException("Invalid state!");
             }
-
 
             return await ValidateAuthorizationCode(code, string.Empty, redirectUri);
         }
@@ -217,21 +225,8 @@ namespace Miracl
 
             client.Timeout = this.Options.BackchannelTimeout;
             client.AuthenticationStyle = AuthenticationStyle.PostValues;
-
             this.accessTokenResponse = await client.RequestAuthorizationCodeAsync(code, redirectUri);
-            bool isUserIdValid = true;
-            
-            if (!string.IsNullOrEmpty(userId) && this.accessTokenResponse.IdentityToken != null)
-            {
-                isUserIdValid = userId == GetUserId(this.accessTokenResponse.IdentityToken);
-            }
-
-            if (this.accessTokenResponse == null || !IsNonceValid(this.accessTokenResponse.IdentityToken))
-            {
-                throw new ArgumentException("Invalid nonce!");
-            }
-            
-            return isUserIdValid ? this.accessTokenResponse : null;
+            return IsIdentityTokenValid(userId) ? this.accessTokenResponse : null;
         }
 
         /// <summary>
@@ -313,13 +308,89 @@ namespace Miracl
                                                     nonce: this.Nonce);
         }
 
-        private bool IsNonceValid(string identityToken)
+        private bool IsIdentityTokenValid(string userId)
         {
-            if (string.IsNullOrEmpty(identityToken))
+            bool isUserIdValid = true;
+            if (!string.IsNullOrEmpty(userId) && this.accessTokenResponse.IdentityToken != null)
             {
-                return false;
+                isUserIdValid = userId == GetUserId(this.accessTokenResponse.IdentityToken);
             }
 
+            if (this.accessTokenResponse == null || string.IsNullOrEmpty(this.accessTokenResponse.IdentityToken))
+            {
+                throw new ArgumentException("Invalid token data!");
+            }
+
+            if (!IsNonceValid(this.accessTokenResponse.IdentityToken))
+            {
+                throw new ArgumentException("Invalid nonce!");
+            }
+
+            this.idTokenClaims = ValidateIdentityToken(this.accessTokenResponse.IdentityToken);
+            return isUserIdValid;
+        }
+
+        private ClaimsPrincipal ValidateIdentityToken(string idToken)
+        {            
+            string kid = GetKey(idToken);
+
+            SecurityToken securityToken;
+            var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
+            var jwt = jwtSecurityTokenHandler.ReadToken(idToken) as JwtSecurityToken;
+            var rsaPublicKey = CreatePublicKey(kid);
+
+            var prms = new TokenValidationParameters()
+            {
+                IssuerSigningToken = new RsaSecurityToken(rsaPublicKey, kid),
+                IssuerSigningKeyResolver = (token, securityToken2, keyIdentifier, validationParameters) =>
+                                           { return new RsaSecurityKey(rsaPublicKey); },
+                ValidIssuer = doc.TryGetString(OidcConstants.Discovery.Issuer),
+                ValidAudience = this.Options.ClientId
+            };
+
+            if (UnitTestDetector.IsInUnitTest)
+            {
+                prms.ValidateLifetime = false;
+            }
+
+            return jwtSecurityTokenHandler.ValidateToken(idToken, prms, out securityToken);
+        }
+
+        private static string GetKey(string jwt)
+        {
+            string[] parts = jwt.Split('.');
+            if (parts.Length != 3)
+            {
+                // signed JWT should have header, payload and signature part, separated with a dot
+                throw new ArgumentException("Invalid token format");
+            }
+
+            string header = parts[0];
+            var part = Encoding.UTF8.GetString(Base64Url.Decode(header));
+            var headerData = JObject.Parse(part);
+            return headerData["kid"].ToString();
+        }
+
+        private RSACryptoServiceProvider CreatePublicKey(string kid)
+        {
+            var cryptoProvider = new RSACryptoServiceProvider();
+            foreach (var key in doc.KeySet.Keys)
+            {
+                if (key.Kty == "RSA" && key.Kid.Equals(kid))
+                {
+                    cryptoProvider.ImportParameters(new RSAParameters()
+                    {
+                        Exponent = Base64UrlEncoder.DecodeBytes(key.E),
+                        Modulus = Base64UrlEncoder.DecodeBytes(key.N)
+                    });
+                }
+            }
+
+            return cryptoProvider;
+        }
+
+        private bool IsNonceValid(string identityToken)
+        {
             var idToken = ParseJwt(identityToken);
             var nonce = idToken.GetValue("nonce");
             if (nonce == null || string.IsNullOrEmpty(nonce.ToString()))

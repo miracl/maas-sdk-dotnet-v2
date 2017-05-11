@@ -1,5 +1,7 @@
 # maas-sdk-dotnet-v2
 
+[![Master Build Status](https://ci.appveyor.com/api/projects/status/phea3m6s71rjl36u/branch/master?svg=true)](https://ci.appveyor.com/project/simeon-aladjem/maas-sdk-dotnet-v2/branch/master)
+
 * **category**:    SDK
 * **copyright**:   2017 MIRACL UK LTD
 * **license**:     ASL 2.0 - http://www.apache.org/licenses/LICENSE-2.0

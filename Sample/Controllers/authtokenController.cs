@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 
-namespace WebApplication4.Controllers
+namespace SampleWebApp.Controllers
 {
     public class authtokenController : Controller
     {

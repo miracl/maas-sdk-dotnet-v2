@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens;
 using System.Web.Configuration;
 
-[assembly: OwinStartupAttribute(typeof(WebApplication4.Startup))]
-namespace WebApplication4
+[assembly: OwinStartupAttribute(typeof(SampleWebApp.Startup))]
+namespace SampleWebApp
 {
     public partial class Startup
     {

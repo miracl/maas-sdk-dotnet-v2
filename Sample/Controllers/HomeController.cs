@@ -9,7 +9,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.UI;
 
-namespace WebApplication4.Controllers
+namespace SampleWebApp.Controllers
 {
 
     public class HomeController : Controller

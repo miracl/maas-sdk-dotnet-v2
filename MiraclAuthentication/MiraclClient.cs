@@ -1,10 +1,12 @@
 ﻿using IdentityModel;
 using IdentityModel.Client;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -23,9 +25,20 @@ namespace Miracl
         internal UserInfoResponse userInfo;
         internal string callbackUrl;
         internal bool requireHttps = true;
+        internal RSACryptoServiceProvider rsaPublicKey;
         private TokenResponse accessTokenResponse;
-        private List<SystemClaims.Claim> claims;
+        private List<Claim> claims;
         private ClaimsPrincipal idTokenClaims;
+        #endregion
+
+        #region Payload class
+        [JsonObject(MemberSerialization.Fields)]
+        private class Payload
+        {
+            internal string signature;
+            internal int timestamp;
+            internal string type;
+        }
         #endregion
 
         #region C'tor
@@ -281,6 +294,64 @@ namespace Miracl
                     ClaimsIdentity.DefaultRoleClaimType);
         }
 
+        /// <summary>
+        /// Sends signature for verification to the DVS service and verifies the received response.
+        /// </summary>
+        /// <param name="signature">The signature to be verified.</param>
+        /// <param name="ts">Timestamp showing when the signature was made.</param>
+        /// <returns><para cref="VerificationResult"/> object which indicates if the specified signature is properly signed.</para></returns>
+        /// <exception cref="ArgumentNullException">Signature cannot be null or empty</exception> 
+        /// <exception cref="InvalidOperationException">No Options for verification - client credentials are used for the verification</exception>
+        /// <exception cref="ArgumentException">
+        /// Timestamp cannot has a negative value
+        /// or
+        /// DVS public key not found
+        /// or
+        /// No `certificate` in the JSON response
+        /// or
+        /// Invalid DVS token format
+        /// or
+        /// No `hash` in the JWT payload
+        /// or
+        /// No `hash` in the signature
+        /// or
+        /// Signature hash and response hash do not match
+        /// or
+        /// No `cAt` in the signature
+        /// or
+        /// The transaction is signed before the issue time
+        /// </exception>
+        public async Task<VerificationResult> DVSVerifySignature(string signature, int ts)
+        {
+            ValidateInput(signature, ts);
+
+            var p = new Payload
+            {
+                signature = signature,
+                timestamp = ts,
+                type = "verification"
+            };
+
+            var resp = await RequestSignature(p);
+            string respContent;
+            switch (resp.StatusCode)
+            {
+                case System.Net.HttpStatusCode.OK:
+                    respContent = await resp.Content.ReadAsStringAsync();
+                    break;
+                case System.Net.HttpStatusCode.Unauthorized:
+                    return new VerificationResult() { Status = VerificationStatus.BadPin, IsSignatureValid = false };
+                case System.Net.HttpStatusCode.Gone:
+                    return new VerificationResult() { Status = VerificationStatus.UserBlocked, IsSignatureValid = false };
+                default:
+                    return new VerificationResult() { Status = VerificationStatus.MissingSignature, IsSignatureValid = false };
+            }
+
+            bool isValid = VerifyResponseSignature(p, respContent);
+            var status = isValid ? VerificationStatus.ValidSignature : VerificationStatus.InvalidSignature;
+            return new VerificationResult() { Status = status, IsSignatureValid = isValid };
+        }
+
         #endregion
 
         #region Private
@@ -331,7 +402,7 @@ namespace Miracl
         }
 
         private ClaimsPrincipal ValidateIdentityToken(string idToken)
-        {            
+        {
             string kid = GetKey(idToken);
 
             SecurityToken securityToken;
@@ -429,16 +500,153 @@ namespace Miracl
         {
             if (doc == null)
             {
-                string discoveryAddress = string.IsNullOrEmpty(this.Options.PlatformAPIAddress) ? Constants.ServerBaseAddress : this.Options.PlatformAPIAddress;
-                var discoveryClient = this.Options.BackchannelHttpHandler != null
-                    ? new DiscoveryClient(discoveryAddress + Constants.DiscoveryPath, this.Options.BackchannelHttpHandler)
-                    : new DiscoveryClient(discoveryAddress + Constants.DiscoveryPath);
-                if (this.requireHttps == false)
-                {
-                    discoveryClient.Policy = new DiscoveryPolicy { RequireHttps = false };
-                }
+                var discoveryClient = GetDiscoveryClient(Constants.DiscoveryPath);
                 doc = await discoveryClient.GetAsync();
             }
+
+            if (rsaPublicKey == null)
+            {
+                var dvsClient = GetDiscoveryClient(Constants.DvsPublicKeyString);
+                var pkDoc = await dvsClient.GetAsync();
+                await ReadPublicKey(pkDoc);
+            }
+        }
+
+        private async Task ReadPublicKey(DiscoveryResponse pkDoc)
+        {
+            var httpClient = this.Options.BackchannelHttpHandler != null ? new HttpClient(this.Options.BackchannelHttpHandler) : new HttpClient();            
+            var resp = await httpClient.GetAsync(GetBaseAddress() + Constants.DvsPublicKeyString);
+            if (resp.StatusCode != System.Net.HttpStatusCode.OK || resp.Content == null)
+            {
+                throw new ArgumentException("Cannot read public key from " + GetBaseAddress() + Constants.DvsPublicKeyString);
+            }
+            var content = await resp.Content.ReadAsStringAsync();
+            pkDoc.KeySet = new IdentityModel.Jwk.JsonWebKeySet(content);
+            if (pkDoc.KeySet.Keys.Count == 1)
+            {
+                rsaPublicKey = new RSACryptoServiceProvider();
+                var key = pkDoc.KeySet.Keys[0];
+                if (key.Kty == "RSA" && !string.IsNullOrEmpty(key.N) && !string.IsNullOrEmpty(key.E))
+                {
+                    rsaPublicKey.ImportParameters(new RSAParameters()
+                    {
+                        Exponent = Base64UrlEncoder.DecodeBytes(key.E),
+                        Modulus = Base64UrlEncoder.DecodeBytes(key.N)
+                    });
+                }
+            }
+        }
+
+        private string GetBaseAddress()
+        {
+            return string.IsNullOrEmpty(this.Options.PlatformAPIAddress) ? Constants.ServerBaseAddress : this.Options.PlatformAPIAddress;
+        }
+
+        private DiscoveryClient GetDiscoveryClient(string urlPost)
+        {
+            var discoveryClient = this.Options.BackchannelHttpHandler != null
+                ? new DiscoveryClient(GetBaseAddress() + urlPost, this.Options.BackchannelHttpHandler)
+                : new DiscoveryClient(GetBaseAddress() + urlPost);
+            if (this.requireHttps == false)
+            {
+                discoveryClient.Policy = new DiscoveryPolicy { RequireHttps = false };
+            }
+
+            return discoveryClient;
+        }
+        
+        private async Task<HttpResponseMessage> RequestSignature(Payload p)
+        {
+            var httpClient = this.Options.BackchannelHttpHandler != null
+                ? new HttpClient(this.Options.BackchannelHttpHandler)
+                : new HttpClient();
+
+            var payloadString = JsonConvert.SerializeObject(p);
+            var content = new StringContent(payloadString, Encoding.UTF8, "application/json");
+            httpClient.SetBasicAuthentication(this.Options.ClientId, this.Options.ClientSecret);
+            httpClient.DefaultRequestHeaders.Add("Accept", "text/plain");
+            return await httpClient.PostAsync(GetBaseAddress() + Constants.DvsVerifyString, content);
+        }
+
+        private bool VerifyResponseSignature(Payload p, string respContent)
+        {
+            var respToken = JObject.Parse(respContent).TryGetString("certificate");
+            if (respToken == null)
+            {
+                throw new ArgumentException("No `certificate` in the JSON response");
+            }
+
+            var parts = respToken.Split('.');
+            if (parts.Length != 3)
+            {
+                throw new ArgumentException("Invalid DVS token format");
+            }
+
+            byte[] jwtSignature = Base64Url.Decode(parts[2]);
+
+            var jwtPayload = ParseJwt(respToken);
+            var hash = jwtPayload.TryGetString("hash");
+            if (hash == null)
+            {
+                throw new ArgumentException("No `hash` in the JWT payload");
+            }
+
+            var docHash = JObject.Parse(p.signature).TryGetString("hash");
+            if (docHash == null)
+            {
+                throw new ArgumentException("No `hash` in the signature");
+            }
+
+            if (!docHash.Equals(hash))
+            {
+                throw new ArgumentException("Signature hash and response hash do not match");
+            }
+
+            var cAt = jwtPayload.TryGetInt("cAt");
+            if (cAt == null)
+            {
+                throw new ArgumentException("No `cAt` in the signature");
+            }
+
+            if (p.timestamp > cAt)
+            {
+                throw new ArgumentException("The transaction is signed before the issue time");
+            }
+
+            return this.rsaPublicKey.VerifyData(Encoding.UTF8.GetBytes(parts[0] + '.' + parts[1]), "SHA256", jwtSignature);
+        }
+
+        private void ValidateInput(string signature, int ts)
+        {
+            if (string.IsNullOrEmpty(signature))
+            {
+                throw new ArgumentNullException("Signature cannot be null or empty");
+            }
+
+            if (ts < 0)
+            {
+                throw new ArgumentException("Timestamp cannot has a negative value");
+            }
+
+            if (this.Options == null)
+            {
+                throw new InvalidOperationException("No Options for verification - client credentials are used for the verification");
+            }
+
+            if (this.rsaPublicKey == null)
+            {
+                throw new ArgumentException("DVS public key not found");
+            }
+        }
+
+        private async Task<IEnumerable<Claim>> GetUserInfoClaimsAsync(string accessToken)
+        {
+            var userInfoClient = this.Options.BackchannelHttpHandler != null
+                ? new UserInfoClient(doc.UserInfoEndpoint, this.Options.BackchannelHttpHandler)
+                : new UserInfoClient(doc.UserInfoEndpoint);
+
+            this.userInfo = await userInfoClient.GetAsync(accessToken);
+            return this.userInfo.Claims;
         }
 
         internal async Task FillClaimsAsync(TokenResponse response)
@@ -461,16 +669,6 @@ namespace Miracl
             }
         }
 
-        private async Task<IEnumerable<Claim>> GetUserInfoClaimsAsync(string accessToken)
-        {
-            var userInfoClient = this.Options.BackchannelHttpHandler != null
-                ? new UserInfoClient(doc.UserInfoEndpoint, this.Options.BackchannelHttpHandler)
-                : new UserInfoClient(doc.UserInfoEndpoint);
-
-            this.userInfo = await userInfoClient.GetAsync(accessToken);
-            return this.userInfo.Claims;
-        }
-
         internal string TryGetValue(string propertyName)
         {
             if (this.userInfo == null || this.userInfo.Json == null)
@@ -479,6 +677,7 @@ namespace Miracl
             JToken value;
             return this.userInfo.Json.TryGetValue(propertyName, out value) ? value.ToString() : null;
         }
+        
         #endregion
         #endregion
     }

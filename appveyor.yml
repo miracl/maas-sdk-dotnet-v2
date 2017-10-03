@@ -2,7 +2,7 @@ version: '#{build}'
 configuration: Release
 environment:
   COVERALLS_REPO_TOKEN:
-    secure: Ltsg9PfcfnGxy1zm98lPp8o49MSZdl7M5tkqgy0gW90tJySjQbsv1cVOWE9S3CFW
+    secure: cxFGnbuMOzKyckaNH2NOUKY0JTPeyEHWTffh7PifFsDuLSnFS17HSKgHuUUtynNy
   OPENCOVER_VER: 4.6.519
   COVERALLS_NET_VER: 0.412
   COVERAGE_FILTER: +[MiraclAuthentication]* -[MiraclAuthenticationTests]* -[SampleWebApp]*

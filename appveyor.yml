@@ -3,14 +3,14 @@ version: '#{build}'
 configuration: Release
 
 environment:
-  COVERALLS_REPO_TOKEN:
-    secure: cxFGnbuMOzKyckaNH2NOUKY0JTPeyEHWTffh7PifFsDuLSnFS17HSKgHuUUtynNy
   OPENCOVER_VER: 4.6.519
   COVERALLS_NET_VER: 0.412
   COVERAGE_FILTER: +[MiraclAuthentication]* -[MiraclAuthenticationTests]* -[SampleWebApp]*
   COVERAGE_DIR: .\coverage
   OPENCOVER_EXE: '%COVERAGE_DIR%\OpenCover.%OPENCOVER_VER%\tools\OpenCover.Console.exe'
   COVERALLS_NET_EXE: '%COVERAGE_DIR%\coveralls.net.%COVERALLS_NET_VER%\tools\csmacnz.Coveralls.exe'
+  COVERALLS_REPO_TOKEN:
+    secure: cxFGnbuMOzKyckaNH2NOUKY0JTPeyEHWTffh7PifFsDuLSnFS17HSKgHuUUtynNy
 
 install:
   - cmd: |
@@ -27,8 +27,4 @@ build:
 test_script:
   - cmd: |
       %OPENCOVER_EXE% -target:nunit3-console.exe -targetargs:".\MiraclAuthenticationTests\bin\Release\MiraclAuthenticationTests.dll" -filter:"%COVERAGE_FILTER%" -register:user -output:%COVERAGE_DIR%\coverage.xml
-      %COVERALLS_NET_EXE% --opencover --useRelativePaths -i %COVERAGE_DIR%\coverage.xml
-
-# artifacts:
-#  - path: TestResult.xml
-#  - path: '**\coverage.xml'
+      %COVERALLS_NET_EXE% --opencover -i %COVERAGE_DIR%\coverage.xml --serviceName appveyor --useRelativePaths

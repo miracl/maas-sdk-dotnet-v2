@@ -4,6 +4,8 @@
     {
         internal const string DefaultAuthenticationType = "MIRACL";
         internal const string CallbackString = "/login";
+        internal const string DvsVerifyString = "/dvs/verify";
+        internal const string DvsPublicKeyString = "/dvs/jwks";
         internal const string ServerBaseAddress = "https://api.mpin.io";
         internal const string DiscoveryPath = "/.well-known/openid-configuration";
         internal const string State = "state";

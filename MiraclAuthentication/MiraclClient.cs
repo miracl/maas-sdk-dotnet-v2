@@ -31,16 +31,6 @@ namespace Miracl
         private ClaimsPrincipal idTokenClaims;
         #endregion
 
-        #region Payload class
-        [JsonObject(MemberSerialization.Fields)]
-        private class Payload
-        {
-            internal string signature;
-            internal int timestamp;
-            internal string type;
-        }
-        #endregion
-
         #region C'tor
         /// <summary>
         /// Initializes a new instance of the <see cref="MiraclClient"/> class.
@@ -295,7 +285,7 @@ namespace Miracl
         }
 
         /// <summary>
-        /// Sends signature for verification to the DVS service and verifies the received response.
+        /// Sends signature for verification to the DVS (designated verifier scheme) service and verifies the received response.
         /// </summary>
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="ts">Timestamp showing when the signature was made.</param>
@@ -321,15 +311,15 @@ namespace Miracl
         /// or
         /// The transaction is signed before the issue time
         /// </exception>
-        public async Task<VerificationResult> DVSVerifySignature(string signature, int ts)
+        public async Task<VerificationResult> DVSVerifySignature(Signature signature, int ts)
         {
             ValidateInput(signature, ts);
 
             var p = new Payload
             {
-                signature = signature,
-                timestamp = ts,
-                type = "verification"
+                Signature = signature,
+                Timestamp = ts,
+                Type = "verification"
             };
 
             var resp = await RequestSignature(p);
@@ -514,7 +504,7 @@ namespace Miracl
 
         private async Task ReadPublicKey(DiscoveryResponse pkDoc)
         {
-            var httpClient = this.Options.BackchannelHttpHandler != null ? new HttpClient(this.Options.BackchannelHttpHandler) : new HttpClient();            
+            var httpClient = this.Options.BackchannelHttpHandler != null ? new HttpClient(this.Options.BackchannelHttpHandler) : new HttpClient();
             var resp = await httpClient.GetAsync(GetBaseAddress() + Constants.DvsPublicKeyString);
             if (resp.StatusCode != System.Net.HttpStatusCode.OK || resp.Content == null)
             {
@@ -560,7 +550,7 @@ namespace Miracl
             var httpClient = this.Options.BackchannelHttpHandler != null
                 ? new HttpClient(this.Options.BackchannelHttpHandler)
                 : new HttpClient();
-
+            
             var payloadString = JsonConvert.SerializeObject(p);
             var content = new StringContent(payloadString, Encoding.UTF8, "application/json");
             httpClient.SetBasicAuthentication(this.Options.ClientId, this.Options.ClientSecret);
@@ -591,12 +581,7 @@ namespace Miracl
                 throw new ArgumentException("No `hash` in the JWT payload");
             }
 
-            var docHash = JObject.Parse(p.signature).TryGetString("hash");
-            if (docHash == null)
-            {
-                throw new ArgumentException("No `hash` in the signature");
-            }
-
+            var docHash = p.Signature.Hash;
             if (!docHash.Equals(hash))
             {
                 throw new ArgumentException("Signature hash and response hash do not match");
@@ -608,7 +593,7 @@ namespace Miracl
                 throw new ArgumentException("No `cAt` in the signature");
             }
 
-            if (p.timestamp > cAt)
+            if (p.Timestamp > cAt)
             {
                 throw new ArgumentException("The transaction is signed before the issue time");
             }
@@ -616,11 +601,11 @@ namespace Miracl
             return this.rsaPublicKey.VerifyData(Encoding.UTF8.GetBytes(parts[0] + '.' + parts[1]), "SHA256", jwtSignature);
         }
 
-        private void ValidateInput(string signature, int ts)
+        private void ValidateInput(Signature signature, int ts)
         {
-            if (string.IsNullOrEmpty(signature))
+            if (signature == null)
             {
-                throw new ArgumentNullException("Signature cannot be null or empty");
+                throw new ArgumentNullException("Signature cannot be null");
             }
 
             if (ts < 0)
@@ -677,7 +662,7 @@ namespace Miracl
             JToken value;
             return this.userInfo.Json.TryGetValue(propertyName, out value) ? value.ToString() : null;
         }
-        
+
         #endregion
         #endregion
     }

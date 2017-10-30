@@ -80,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants.cs" />
+    <Compile Include="DVS.cs" />
     <Compile Include="MiraclAuthenticationOptions.cs" />
     <Compile Include="MiraclClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

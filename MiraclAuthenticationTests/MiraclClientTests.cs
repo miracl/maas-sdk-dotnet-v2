@@ -31,13 +31,11 @@ namespace MiraclAuthenticationTests
         private const string ValidAccessToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjMxLTA3LTIwMTYifQ.eyJjaWQiOiJnbnVlaTA3YmN5ZWU4IiwiZXhwIjoxNDkzMDE2NDk5LCJpc3MiOiJodHRwczovL2FwaS5kZXYubWlyYWNsLm5ldCIsInNjcCI6WyJvcGVuaWQiLCJwcm9maWxlIiwiZW1haWwiXSwic3ViIjoicGV0eWEua29sZXZhQG1pcmFjbC5jb20ifQ.MKPhkQ6-QbPIuD68cfy6QmuqelFUs1yUmW2dZn3ovjC8BkdCdgzRzysAvdTQCGe8F-WRTIAdmY00rXmC-z4_VVG1yESdOP2eCOD7zFmIXF9m5OTKMJJEaG6SOUoko5jypohmDk4MuLjOvfMOhXQfWKqLxkliMmM2e8J1FjSY7sF6Azg0Pq_mqK-mznIofbzR7tnA22XmlF_GRqYyoRpUEtkzU2ydoU9oGSJrwtwTeN1vXlzEwSvj65mVkuP4dIqJ5fmYstgTyKlzkwe8wFDHhB3Px-89lh5JRYKoY0nbDIUOc0RA0dKFnnFX3P0Cp9kp2QOwXYdRLmdhvhn7IeJjjw";
         private const string ValidIdToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjMxLTA3LTIwMTYifQ.eyJhbXIiOlsidG9rZW4iXSwiYXVkIjoiZ251ZWkwN2JjeWVlOCIsImV4cCI6MTQ5MzAxNjc3NSwiaWF0IjoxNDkzMDE1ODc1LCJpc3MiOiJodHRwczovL2FwaS5kZXYubWlyYWNsLm5ldCIsIm5vbmNlIjoiODBmY2Q1M2QzNTc2NjIxZGE2MjNlMWZkYmU2YzdjNTE0MTZhOTc1YTNlNTM4OThjY2IwYmRlZWIwODRiZTQyZiIsInN1YiI6InBldHlhLmtvbGV2YUBtaXJhY2wuY29tIn0.CTQu9bx7vCV6pZvtDhEJTFjeasMJoZtbq93vFj2nwVODaGj5Ajp9ZYZvhD7eeYtOBzBH0rOAjNc_348bZXjiqi3IdpEMCTiQz0dPqxTlywUjwM0HCMQ0C0TIwUh4f8Os0rthF1a1yYy_WgL7FgFsmb12xwTwt_TXrKHqbHXV-eX8ip0GCQgao9B1VC3Jj4NEfEXuUSq2nexEx-p_H9LgqbNBro3i_kPoP7C3wfiSFS30qDDUKZLp3SeW90-ErcNQKmU7rukvujeCpeziYlycLyeRTPVmAOTMEyO4ABQyk4KTl_w9P2O8AXW6a2B7nfjGAQGVT_m9Z_56yzgJoJ9KRg";
         private const string Nonce = "80fcd53d3576621da623e1fdbe6c7c51416a975a3e53898ccb0bdeeb084be42f";
-        private const string SignatureToVerify = @"{
-                                                    ""mpinid"": ""7b226973737565644174223a313439373335363536352c22757365724944223a2273616d75656c652e616e6472656f6c69406578616d706c652e636f6d222c22634944223a22222c226d6f62696c65223a312c2273616c74223a223236343330323663373430363162363162616465643836313262373530626334222c2276223a317d"",
-                                                    ""public-key"": ""0f9b60020f2a6108c052ba5d2ac0b24b8b7975ae2a2082ddb5d51b236662620e0c05f8310abe5fbda9ed80d638887ed2859f22b9c902bf88bd52dd083ce26e93144e03e61ad2e14722d29e21fde4eaa9f33f793db7da5e3f6211a7d99a8186e023c7fc60de7185a5d73d11b393530d0245256f7ecc0b1c7c96513b1c717a9b1b"", 
-                                                    ""u"": ""041c9e2ae817f033140a2085add0594643ca44381dae76e0241cbf790371a7f3c406b31ba86b3cd0d744f0a2e87dbcc32d19416d15aaae91f9122cb4d12cb78f07"", 
-                                                    ""v"": ""040ef9b951522009900127820a9a956486b9e11ad05e18e4e86931460d310a2ecf106c9935dc0775a41892577b2f96f87c556dbe87f8fcf7fda546ec21752beada"", 
-                                                    ""hash"": ""15760473979d2027bebca22d4e0ae40f49d0756dda507de71df99bf04d2a7d07""
-                                                    }";
+        private readonly Signature SignatureToVerify = new Signature("15760473979d2027bebca22d4e0ae40f49d0756dda507de71df99bf04d2a7d07",
+                                                                      "7b226973737565644174223a313439373335363536352c22757365724944223a2273616d75656c652e616e6472656f6c69406578616d706c652e636f6d222c22634944223a22222c226d6f62696c65223a312c2273616c74223a223236343330323663373430363162363162616465643836313262373530626334222c2276223a317d",
+                                                                       "041c9e2ae817f033140a2085add0594643ca44381dae76e0241cbf790371a7f3c406b31ba86b3cd0d744f0a2e87dbcc32d19416d15aaae91f9122cb4d12cb78f07",
+                                                                       "040ef9b951522009900127820a9a956486b9e11ad05e18e4e86931460d310a2ecf106c9935dc0775a41892577b2f96f87c556dbe87f8fcf7fda546ec21752beada",
+                                                                       "0f9b60020f2a6108c052ba5d2ac0b24b8b7975ae2a2082ddb5d51b236662620e0c05f8310abe5fbda9ed80d638887ed2859f22b9c902bf88bd52dd083ce26e93144e03e61ad2e14722d29e21fde4eaa9f33f793db7da5e3f6211a7d99a8186e023c7fc60de7185a5d73d11b393530d0245256f7ecc0b1c7c96513b1c717a9b1b");
         #endregion // Consts
 
         #region Tests
@@ -419,6 +417,23 @@ namespace MiraclAuthenticationTests
                                Throws.TypeOf<ArgumentException>().And.Message.Contains("Cannot read public key"));
         }
 
+        [TestCase("", "s", "d", "d", "b")]
+        [TestCase(null, "s", "d", "d", "b")]
+        [TestCase("2", "", "d", "d", "b")]
+        [TestCase("3", null, "d", "d", "b")]
+        [TestCase("w", "s", "", "d", "b")]
+        [TestCase("w", "s", null, "d", "b")]
+        [TestCase("w", "s", "d", "", "b")]
+        [TestCase("e", "s", "d", null, "b")]
+        [TestCase("s", "s", "d", "d", "")]
+        [TestCase("f", "s", "d", "d", null)]
+        public void Test_Signature(string hash, string u, string v, string publicKey, string mpinId)
+        {
+            Signature s;
+            Assert.That(() => s = new Signature(hash, mpinId, u, v, publicKey),
+               Throws.TypeOf<ArgumentNullException>().And.Message.Contains("Value cannot be null"));            
+        }
+
         [Test]
         public void Test_DVSVerifySignature()
         {
@@ -433,45 +448,13 @@ namespace MiraclAuthenticationTests
         }
 
         [Test]
-        public void Test_DVSVerifySignature_DVSRequestPayload()
-        {
-            string expectedContent = @"{""signature"":""mock signature"",""timestamp"":0,""type"":""verification""}";
-            var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Post, DVSVerifyEndpoint).WithContent(expectedContent).Respond(HttpStatusCode.Accepted, "application/json", "pk");
-
-            MiraclClient client = InitClient("MockClient", "MockSecret", mockHttp);
-            SetRsaPublicKey(client);
-
-            var resp = client.DVSVerifySignature("mock signature", 0).Result;
-
-            Assert.IsFalse(resp.IsSignatureValid);
-            Assert.AreEqual(VerificationStatus.MissingSignature, resp.Status);
-        }
-
-        [Test]
         public void Test_DVSVerifySignature_InvalidSignature()
         {
             MiraclClient client = InitClient();
             SetRsaPublicKey(client);
 
             Assert.That(() => client.DVSVerifySignature(null, 0),
-               Throws.TypeOf<ArgumentNullException>().And.Message.Contains("Signature cannot be null or empty"));
-
-            Assert.That(() => client.DVSVerifySignature("", 0),
-               Throws.TypeOf<ArgumentNullException>().And.Message.Contains("Signature cannot be null or empty"));
-
-            Assert.That(() => client.DVSVerifySignature("invalidJSON", 0),
-              Throws.TypeOf<Newtonsoft.Json.JsonReaderException>());
-
-            string noHashSignature = @"{
-                                        ""mpinid"": ""7b226973737565644174223a313439373335363536352c22757365724944223a2273616d75656c652e616e6472656f6c69406578616d706c652e636f6d222c22634944223a22222c226d6f62696c65223a312c2273616c74223a223236343330323663373430363162363162616465643836313262373530626334222c2276223a317d"",
-                                        ""public-key"": ""0f9b60020f2a6108c052ba5d2ac0b24b8b7975ae2a2082ddb5d51b236662620e0c05f8310abe5fbda9ed80d638887ed2859f22b9c902bf88bd52dd083ce26e93144e03e61ad2e14722d29e21fde4eaa9f33f793db7da5e3f6211a7d99a8186e023c7fc60de7185a5d73d11b393530d0245256f7ecc0b1c7c96513b1c717a9b1b"", 
-                                        ""u"": ""041c9e2ae817f033140a2085add0594643ca44381dae76e0241cbf790371a7f3c406b31ba86b3cd0d744f0a2e87dbcc32d19416d15aaae91f9122cb4d12cb78f07"", 
-                                        ""v"": ""040ef9b951522009900127820a9a956486b9e11ad05e18e4e86931460d310a2ecf106c9935dc0775a41892577b2f96f87c556dbe87f8fcf7fda546ec21752beada"" 
-                                        }";
-
-            Assert.That(() => client.DVSVerifySignature(noHashSignature, 0),
-              Throws.TypeOf<ArgumentException>().And.Message.Contains("No `hash` in the signature"));
+               Throws.TypeOf<ArgumentNullException>().And.Message.Contains("Signature cannot be null"));
         }
 
         [Test]
@@ -564,13 +547,11 @@ namespace MiraclAuthenticationTests
             MiraclClient client = InitClient();
             SetRsaPublicKey(client);
 
-            string signature = @"{
-                                    ""mpinid"": ""7b226973737565644174223a313439373335363536352c22757365724944223a2273616d75656c652e616e6472656f6c69406578616d706c652e636f6d222c22634944223a22222c226d6f62696c65223a312c2273616c74223a223236343330323663373430363162363162616465643836313262373530626334222c2276223a317d"",
-                                    ""public-key"": ""0f9b60020f2a6108c052ba5d2ac0b24b8b7975ae2a2082ddb5d51b236662620e0c05f8310abe5fbda9ed80d638887ed2859f22b9c902bf88bd52dd083ce26e93144e03e61ad2e14722d29e21fde4eaa9f33f793db7da5e3f6211a7d99a8186e023c7fc60de7185a5d73d11b393530d0245256f7ecc0b1c7c96513b1c717a9b1b"", 
-                                    ""u"": ""041c9e2ae817f033140a2085add0594643ca44381dae76e0241cbf790371a7f3c406b31ba86b3cd0d744f0a2e87dbcc32d19416d15aaae91f9122cb4d12cb78f07"", 
-                                    ""v"": ""040ef9b951522009900127820a9a956486b9e11ad05e18e4e86931460d310a2ecf106c9935dc0775a41892577b2f96f87c556dbe87f8fcf7fda546ec21752beada"", 
-                                    ""hash"": ""different-hash-value""
-                                    }";
+            Signature signature = new Signature("different-hash-value",
+                                                "7b226973737565644174223a313439373335363536352c22757365724944223a2273616d75656c652e616e6472656f6c69406578616d706c652e636f6d222c22634944223a22222c226d6f62696c65223a312c2273616c74223a223236343330323663373430363162363162616465643836313262373530626334222c2276223a317d",
+                                                "041c9e2ae817f033140a2085add0594643ca44381dae76e0241cbf790371a7f3c406b31ba86b3cd0d744f0a2e87dbcc32d19416d15aaae91f9122cb4d12cb78f07",
+                                                "040ef9b951522009900127820a9a956486b9e11ad05e18e4e86931460d310a2ecf106c9935dc0775a41892577b2f96f87c556dbe87f8fcf7fda546ec21752beada",
+                                                "0f9b60020f2a6108c052ba5d2ac0b24b8b7975ae2a2082ddb5d51b236662620e0c05f8310abe5fbda9ed80d638887ed2859f22b9c902bf88bd52dd083ce26e93144e03e61ad2e14722d29e21fde4eaa9f33f793db7da5e3f6211a7d99a8186e023c7fc60de7185a5d73d11b393530d0245256f7ecc0b1c7c96513b1c717a9b1b");
 
             Assert.That(() => client.DVSVerifySignature(signature, 0),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Signature hash and response hash do not match"));
@@ -613,10 +594,19 @@ namespace MiraclAuthenticationTests
             Assert.IsFalse(resp.IsSignatureValid);
             Assert.AreEqual(VerificationStatus.InvalidSignature, resp.Status);
         }
-        #endregion // Tests
 
-        #region Methods
-        private static async Task<string> GetRequestUrl(MiraclClient client, string baseUri)
+        [Test]
+        public void Test_CreateDocumentHash()
+        {
+            string document = "sample document";
+            string expected = "1789c9eeee7dcbf9a5e9b47374e244f85263dc45922a249d37f7ba9fd4efb850";
+
+            Assert.AreEqual(expected, new MiraclClient().CreateDocumentHash(document));
+        }
+         #endregion // Tests
+
+            #region Methods
+            private static async Task<string> GetRequestUrl(MiraclClient client, string baseUri)
         {
             return await client.GetAuthorizationRequestUrlAsync(baseUri, new MiraclAuthenticationOptions { ClientId = "ClientID" });
         }
@@ -655,12 +645,12 @@ namespace MiraclAuthenticationTests
 
         private void SetRsaPublicKey(MiraclClient client)
         {
-            client.rsaPublicKey = new System.Security.Cryptography.RSACryptoServiceProvider();
+            client.dvsRsaPublicKey = new System.Security.Cryptography.RSACryptoServiceProvider();
         }
 
         private MockHttpMessageHandler GetDefaultMockHttp()
         {
-            var mockHttp = new MockHttpMessageHandler();            
+            var mockHttp = new MockHttpMessageHandler();
             mockHttp.When(HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "{\"certificate\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6InMxIn0.eyJjQXQiOjE0OTc0NDQ0NTEsImV4cCI6MTQ5NzQ0NDQ2MSwiaGFzaCI6IjE1NzYwNDczOTc5ZDIwMjdiZWJjYTIyZDRlMGFlNDBmNDlkMDc1NmRkYTUwN2RlNzFkZjk5YmYwNGQyYTdkMDcifQ.A19LAJpEZjFhwor0bj02AGh9Nu_VGtyNXeJhqSe1uWc16kJA3Mi7Oe5ocFRUbb5xRuQ8TkzL9kjjiE3CgHLFftCDswHQqLX6nIH6oamVd0lt3fbgAu3pJBtK9U2BKSxwT7q-pQNFuPJTs-3P8XAwegJAbUouHUKuKL1zJTnDmQk\"}");
             mockHttp.When(HttpMethod.Get, DVSPubKeysEndpoint).Respond("application/json", "{\"keys\": [{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"s1\",\"n\":\"kWp2zRA23Z3vTL4uoe8kTFptxBVFunIoP4t_8TDYJrOb7D1iZNDXVeEsYKp6ppmrTZDAgd-cNOTKLd4M39WJc5FN0maTAVKJc7NxklDeKc4dMe1BGvTZNG4MpWBo-taKULlYUu0ltYJuLzOjIrTHfarucrGoRWqM0sl3z2-fv9k\",\"e\":\"AQAB\"}]}");
             return mockHttp;

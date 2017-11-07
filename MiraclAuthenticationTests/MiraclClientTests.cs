@@ -441,7 +441,7 @@ namespace MiraclAuthenticationTests
             SetDiscovery(client);
             var url = client.GetAuthorizationRequestUrlAsync(Endpoint).Result;
 
-            var resp = client.DVSVerifySignature(SignatureToVerify, 0).Result;
+            var resp = client.DvsVerifySignature(SignatureToVerify, 0).Result;
 
             Assert.IsTrue(resp.IsSignatureValid);
             Assert.AreEqual(VerificationStatus.ValidSignature, resp.Status);
@@ -453,7 +453,7 @@ namespace MiraclAuthenticationTests
             MiraclClient client = InitClient();
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(null, 0),
+            Assert.That(() => client.DvsVerifySignature(null, 0),
                Throws.TypeOf<ArgumentNullException>().And.Message.Contains("Signature cannot be null"));
         }
 
@@ -462,7 +462,7 @@ namespace MiraclAuthenticationTests
         {
             var client = new MiraclClient();
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, -1),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, -1),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Timestamp cannot has a negative value"));
         }
 
@@ -471,7 +471,7 @@ namespace MiraclAuthenticationTests
         {
             var client = new MiraclClient();
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<InvalidOperationException>().And.Message.Contains("No Options for verification - client credentials are used for the verification"));
         }
 
@@ -480,7 +480,7 @@ namespace MiraclAuthenticationTests
         {
             var client = InitClient();
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
               Throws.TypeOf<ArgumentException>().And.Message.Contains("DVS public key not found"));
         }
 
@@ -493,7 +493,7 @@ namespace MiraclAuthenticationTests
             MiraclClient client = InitClient(clientId, clientSecret);
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<ArgumentNullException>());
         }
 
@@ -508,7 +508,7 @@ namespace MiraclAuthenticationTests
             var client = InitClient("MockClient", "MockSecret", mockHttp);
             SetRsaPublicKey(client);
 
-            var resp = client.DVSVerifySignature(SignatureToVerify, 0).Result;
+            var resp = client.DvsVerifySignature(SignatureToVerify, 0).Result;
 
             Assert.IsFalse(resp.IsSignatureValid);
             Assert.AreEqual(expected, resp.Status);
@@ -522,22 +522,22 @@ namespace MiraclAuthenticationTests
             var client = InitClient("MockClient", "MockSecret", mockHttp);
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                 Throws.TypeOf<ArgumentException>().And.Message.Contains("No `certificate` in the JSON response"));
 
             mockHttp.Clear();
             mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "{\"certificate\":\"ey.fQ\"}");
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Invalid DVS token"));
 
             mockHttp.Clear();
             mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "{\"certificate\":\"eyfQnD\"}");
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Invalid DVS token"));
 
             mockHttp.Clear();
             mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "\"invalid\":\"json\"}");
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<Newtonsoft.Json.JsonReaderException>());
         }
 
@@ -553,7 +553,7 @@ namespace MiraclAuthenticationTests
                                                 "040ef9b951522009900127820a9a956486b9e11ad05e18e4e86931460d310a2ecf106c9935dc0775a41892577b2f96f87c556dbe87f8fcf7fda546ec21752beada",
                                                 "0f9b60020f2a6108c052ba5d2ac0b24b8b7975ae2a2082ddb5d51b236662620e0c05f8310abe5fbda9ed80d638887ed2859f22b9c902bf88bd52dd083ce26e93144e03e61ad2e14722d29e21fde4eaa9f33f793db7da5e3f6211a7d99a8186e023c7fc60de7185a5d73d11b393530d0245256f7ecc0b1c7c96513b1c717a9b1b");
 
-            Assert.That(() => client.DVSVerifySignature(signature, 0),
+            Assert.That(() => client.DvsVerifySignature(signature, 0),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Signature hash and response hash do not match"));
         }
 
@@ -563,7 +563,7 @@ namespace MiraclAuthenticationTests
             MiraclClient client = InitClient();
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, int.MaxValue),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, int.MaxValue),
               Throws.TypeOf<ArgumentException>().And.Message.Contains("The transaction is signed before the issue time"));
         }
 
@@ -579,7 +579,7 @@ namespace MiraclAuthenticationTests
             var client = InitClient("MockClient", "MockSecret", mockHttp);
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, int.MaxValue),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, int.MaxValue),
               Throws.TypeOf<ArgumentException>().And.Message.Contains(expected));
         }
 
@@ -589,7 +589,7 @@ namespace MiraclAuthenticationTests
             var client = InitClient();
             SetRsaPublicKey(client);
 
-            var resp = client.DVSVerifySignature(SignatureToVerify, 0).Result;
+            var resp = client.DvsVerifySignature(SignatureToVerify, 0).Result;
 
             Assert.IsFalse(resp.IsSignatureValid);
             Assert.AreEqual(VerificationStatus.InvalidSignature, resp.Status);
@@ -601,7 +601,7 @@ namespace MiraclAuthenticationTests
             string document = "sample document";
             string expected = "1789c9eeee7dcbf9a5e9b47374e244f85263dc45922a249d37f7ba9fd4efb850";
 
-            Assert.AreEqual(expected, new MiraclClient().CreateDocumentHash(document));
+            Assert.AreEqual(expected, new MiraclClient().DvsCreateDocumentHash(document));
         }
          #endregion // Tests
 

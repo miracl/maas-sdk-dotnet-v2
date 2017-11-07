@@ -311,7 +311,7 @@ namespace Miracl
         /// or
         /// The transaction is signed before the issue time
         /// </exception>
-        public async Task<VerificationResult> DVSVerifySignature(Signature signature, int ts)
+        public async Task<VerificationResult> DvsVerifySignature(Signature signature, int ts)
         {
             ValidateInput(signature, ts);
 
@@ -347,7 +347,7 @@ namespace Miracl
         /// </summary>
         /// <param name="document">A generic document.</param>
         /// <returns>Hash value of the document as a hex-encoded string</returns>
-        public string CreateDocumentHash(string document)
+        public string DvsCreateDocumentHash(string document)
         {
             using (var algorithm = SHA256.Create())
             {

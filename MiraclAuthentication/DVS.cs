@@ -7,39 +7,56 @@ using System.Threading.Tasks;
 
 namespace Miracl
 {
-    #region Payload class
-
+    #region VerificationStatus
     /// <summary>
-    /// Describes the jws payload sent to the DVS service.
+    /// Status used to notify the user if the DVS verification succeeds or not
     /// </summary>
-    internal class Payload
+    public enum VerificationStatus
     {
         /// <summary>
-        /// Gets or sets the signature to verify.
+        /// The signature verification is successful
+        /// </summary>
+        ValidSignature,
+        /// <summary>
+        /// Bad PIN or token
+        /// </summary>
+        BadPin,
+        /// <summary>
+        /// Identity revoked due to some invalid attempts
+        /// </summary>
+        UserBlocked,
+        /// <summary>
+        /// Unexpected server response, no signature received
+        /// </summary>
+        MissingSignature,
+        /// <summary>
+        /// The received signature is not valid
+        /// </summary>
+        InvalidSignature
+    }
+    #endregion
+
+    #region VerificationResult
+    /// <summary>
+    /// Describes the result of a DVS signature verification
+    /// </summary>
+    public class VerificationResult
+    {
+        /// <summary>
+        /// Gets the status.
         /// </summary>
         /// <value>
-        /// The signature.
+        /// The status.
         /// </value>
-        [JsonProperty("signature")]
-        internal Signature Signature { get; set; }
+        public VerificationStatus Status { get; internal set; }
 
         /// <summary>
-        /// Gets or sets the epoch time (in seconds) of the signature creation.
+        /// Gets a value indicating whether the signature verification is valid.
         /// </summary>
         /// <value>
-        /// The epoch time.
+        ///   <c>true</c> if signature verification is valid; otherwise, <c>false</c>.
         /// </value>
-        [JsonProperty("timestamp")]
-        internal int Timestamp { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of action, in this case "verification".
-        /// </summary>
-        /// <value>
-        /// The type of action.
-        /// </value>
-        [JsonProperty("type")]
-        internal string Type { get; set; }
+        public bool IsSignatureValid { get; internal set; }
     }
     #endregion
 
@@ -132,4 +149,41 @@ namespace Miracl
         }
     }
     #endregion
+
+    #region Payload class
+
+    /// <summary>
+    /// Describes the jws payload sent to the DVS service.
+    /// </summary>
+    internal class Payload
+    {
+        /// <summary>
+        /// Gets or sets the signature to verify.
+        /// </summary>
+        /// <value>
+        /// The signature.
+        /// </value>
+        [JsonProperty("signature")]
+        internal Signature Signature { get; set; }
+
+        /// <summary>
+        /// Gets or sets the epoch time (in seconds) of the signature creation.
+        /// </summary>
+        /// <value>
+        /// The epoch time.
+        /// </value>
+        [JsonProperty("timestamp")]
+        internal int Timestamp { get; set; }
+
+        /// <summary>
+        /// Gets or sets the type of action, in this case "verification".
+        /// </summary>
+        /// <value>
+        /// The type of action.
+        /// </value>
+        [JsonProperty("type")]
+        internal string Type { get; set; }
+    }
+    #endregion
+
 }

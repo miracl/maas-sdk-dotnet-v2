@@ -25,7 +25,7 @@ namespace Miracl
         internal UserInfoResponse userInfo;
         internal string callbackUrl;
         internal bool requireHttps = true;
-        internal RSACryptoServiceProvider rsaPublicKey;
+        internal RSACryptoServiceProvider dvsRsaPublicKey;
         private TokenResponse accessTokenResponse;
         private List<Claim> claims;
         private ClaimsPrincipal idTokenClaims;
@@ -311,7 +311,7 @@ namespace Miracl
         /// or
         /// The transaction is signed before the issue time
         /// </exception>
-        public async Task<VerificationResult> DVSVerifySignature(Signature signature, int ts)
+        public async Task<VerificationResult> DvsVerifySignature(Signature signature, int ts)
         {
             ValidateInput(signature, ts);
 
@@ -340,6 +340,20 @@ namespace Miracl
             bool isValid = VerifyResponseSignature(p, respContent);
             var status = isValid ? VerificationStatus.ValidSignature : VerificationStatus.InvalidSignature;
             return new VerificationResult() { Status = status, IsSignatureValid = isValid };
+        }
+
+        /// <summary>
+        /// Creates a document hash using the SHA256 hashing algorithm.
+        /// </summary>
+        /// <param name="document">A generic document.</param>
+        /// <returns>Hash value of the document as a hex-encoded string</returns>
+        public string DvsCreateDocumentHash(string document)
+        {
+            using (var algorithm = SHA256.Create())
+            {
+                var hashedBytes = algorithm.ComputeHash(Encoding.UTF8.GetBytes(document));
+                return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
+            }
         }
 
         #endregion
@@ -494,7 +508,7 @@ namespace Miracl
                 doc = await discoveryClient.GetAsync();
             }
 
-            if (rsaPublicKey == null)
+            if (dvsRsaPublicKey == null)
             {
                 var dvsClient = GetDiscoveryClient(Constants.DvsPublicKeyString);
                 var pkDoc = await dvsClient.GetAsync();
@@ -514,11 +528,11 @@ namespace Miracl
             pkDoc.KeySet = new IdentityModel.Jwk.JsonWebKeySet(content);
             if (pkDoc.KeySet.Keys.Count == 1)
             {
-                rsaPublicKey = new RSACryptoServiceProvider();
+                dvsRsaPublicKey = new RSACryptoServiceProvider();
                 var key = pkDoc.KeySet.Keys[0];
                 if (key.Kty == "RSA" && !string.IsNullOrEmpty(key.N) && !string.IsNullOrEmpty(key.E))
                 {
-                    rsaPublicKey.ImportParameters(new RSAParameters()
+                    dvsRsaPublicKey.ImportParameters(new RSAParameters()
                     {
                         Exponent = Base64UrlEncoder.DecodeBytes(key.E),
                         Modulus = Base64UrlEncoder.DecodeBytes(key.N)
@@ -598,7 +612,7 @@ namespace Miracl
                 throw new ArgumentException("The transaction is signed before the issue time");
             }
 
-            return this.rsaPublicKey.VerifyData(Encoding.UTF8.GetBytes(parts[0] + '.' + parts[1]), "SHA256", jwtSignature);
+            return this.dvsRsaPublicKey.VerifyData(Encoding.UTF8.GetBytes(parts[0] + '.' + parts[1]), "SHA256", jwtSignature);
         }
 
         private void ValidateInput(Signature signature, int ts)
@@ -618,7 +632,7 @@ namespace Miracl
                 throw new InvalidOperationException("No Options for verification - client credentials are used for the verification");
             }
 
-            if (this.rsaPublicKey == null)
+            if (this.dvsRsaPublicKey == null)
             {
                 throw new ArgumentException("DVS public key not found");
             }

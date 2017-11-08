@@ -24,8 +24,8 @@ namespace MiraclAuthenticationTests
         private const string TokenEndpoint = "https://api.dev.miracl.net/oidc/token";
         private const string UserEndpoint = "https://api.dev.miracl.net/oidc/userinfo";
         private const string AuthorizeEndpoint = "https://api.dev.miracl.net/authorize";
-        private const string DVSVerifyEndpoint = "https://api.dev.miracl.net/dvs/verify";
-        private const string DVSPubKeysEndpoint = "https://api.dev.miracl.net/dvs/jwks";
+        private const string DvsVerifyEndpoint =  Endpoint + Constants.DvsVerifyString;
+        private const string DvsPubKeysEndpoint = Endpoint + Constants.DvsPublicKeyString;
         private const string CertUri = "https://api.dev.miracl.net/oidc/certs";
         private const string ValidClientId = "gnuei07bcyee8";
         private const string ValidAccessToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjMxLTA3LTIwMTYifQ.eyJjaWQiOiJnbnVlaTA3YmN5ZWU4IiwiZXhwIjoxNDkzMDE2NDk5LCJpc3MiOiJodHRwczovL2FwaS5kZXYubWlyYWNsLm5ldCIsInNjcCI6WyJvcGVuaWQiLCJwcm9maWxlIiwiZW1haWwiXSwic3ViIjoicGV0eWEua29sZXZhQG1pcmFjbC5jb20ifQ.MKPhkQ6-QbPIuD68cfy6QmuqelFUs1yUmW2dZn3ovjC8BkdCdgzRzysAvdTQCGe8F-WRTIAdmY00rXmC-z4_VVG1yESdOP2eCOD7zFmIXF9m5OTKMJJEaG6SOUoko5jypohmDk4MuLjOvfMOhXQfWKqLxkliMmM2e8J1FjSY7sF6Azg0Pq_mqK-mznIofbzR7tnA22XmlF_GRqYyoRpUEtkzU2ydoU9oGSJrwtwTeN1vXlzEwSvj65mVkuP4dIqJ5fmYstgTyKlzkwe8wFDHhB3Px-89lh5JRYKoY0nbDIUOc0RA0dKFnnFX3P0Cp9kp2QOwXYdRLmdhvhn7IeJjjw";
@@ -399,10 +399,10 @@ namespace MiraclAuthenticationTests
         }
 
         [Test]
-        public void Test_GetAuthorizationRequestUrlAsync_DVSPublicKeyResponseNotOK()
+        public void Test_GetAuthorizationRequestUrlAsync_DvsPublicKeyResponseNotOK()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(System.Net.Http.HttpMethod.Get, DVSPubKeysEndpoint).Respond(HttpStatusCode.NotFound, "application/json", "pk");
+            mockHttp.When(System.Net.Http.HttpMethod.Get, DvsPubKeysEndpoint).Respond(HttpStatusCode.NotFound, "application/json", "pk");
 
             var client = InitClient("MockClient", "MockSecret", mockHttp);
             SetDiscovery(client);
@@ -411,7 +411,7 @@ namespace MiraclAuthenticationTests
                                Throws.TypeOf<ArgumentException>().And.Message.Contains("Cannot read public key"));
 
             mockHttp.Clear();
-            mockHttp.When(System.Net.Http.HttpMethod.Get, DVSPubKeysEndpoint).Respond(HttpStatusCode.OK, null);
+            mockHttp.When(System.Net.Http.HttpMethod.Get, DvsPubKeysEndpoint).Respond(HttpStatusCode.OK, null);
 
             Assert.That(() => client.GetAuthorizationRequestUrlAsync(Endpoint),
                                Throws.TypeOf<ArgumentException>().And.Message.Contains("Cannot read public key"));
@@ -435,52 +435,52 @@ namespace MiraclAuthenticationTests
         }
 
         [Test]
-        public void Test_DVSVerifySignature()
+        public void Test_DvsVerifySignature()
         {
             MiraclClient client = InitClient();
             SetDiscovery(client);
             var url = client.GetAuthorizationRequestUrlAsync(Endpoint).Result;
 
-            var resp = client.DVSVerifySignature(SignatureToVerify, 0).Result;
+            var resp = client.DvsVerifySignature(SignatureToVerify, 0).Result;
 
             Assert.IsTrue(resp.IsSignatureValid);
             Assert.AreEqual(VerificationStatus.ValidSignature, resp.Status);
         }
 
         [Test]
-        public void Test_DVSVerifySignature_InvalidSignature()
+        public void Test_DvsVerifySignature_InvalidSignature()
         {
             MiraclClient client = InitClient();
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(null, 0),
+            Assert.That(() => client.DvsVerifySignature(null, 0),
                Throws.TypeOf<ArgumentNullException>().And.Message.Contains("Signature cannot be null"));
         }
 
         [Test]
-        public void Test_DVSVerifySignature_InvalidTimestamp()
+        public void Test_DvsVerifySignature_InvalidTimestamp()
         {
             var client = new MiraclClient();
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, -1),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, -1),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Timestamp cannot has a negative value"));
         }
 
         [Test]
-        public void Test_DVSVerifySignature_NullClientOptions()
+        public void Test_DvsVerifySignature_NullClientOptions()
         {
             var client = new MiraclClient();
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<InvalidOperationException>().And.Message.Contains("No Options for verification - client credentials are used for the verification"));
         }
 
         [Test]
-        public void Test_DVSVerifySignature_NullClientRsaPublicKey()
+        public void Test_DvsVerifySignature_NullClientRsaPublicKey()
         {
             var client = InitClient();
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
               Throws.TypeOf<ArgumentException>().And.Message.Contains("DVS public key not found"));
         }
 
@@ -488,61 +488,61 @@ namespace MiraclAuthenticationTests
         [TestCase(null, "MockSecret")]
         [TestCase("", "")]
         [TestCase("", "MockSecret")]
-        public void Test_DVSVerifySignature_InvalidClientIdAndSecret(string clientId, string clientSecret)
+        public void Test_DvsVerifySignature_InvalidClientIdAndSecret(string clientId, string clientSecret)
         {
             MiraclClient client = InitClient(clientId, clientSecret);
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<ArgumentNullException>());
         }
 
         [TestCase(HttpStatusCode.Unauthorized, VerificationStatus.BadPin)]
         [TestCase(HttpStatusCode.Gone, VerificationStatus.UserBlocked)]
         [TestCase(HttpStatusCode.Forbidden, VerificationStatus.MissingSignature)]
-        public void Test_DVSVerifySignature_ServerResponseStatusNotOK(HttpStatusCode respStatusCode, VerificationStatus expected)
+        public void Test_DvsVerifySignature_ServerResponseStatusNotOK(HttpStatusCode respStatusCode, VerificationStatus expected)
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond(respStatusCode, "application/json", string.Empty);
+            mockHttp.When(System.Net.Http.HttpMethod.Post, DvsVerifyEndpoint).Respond(respStatusCode, "application/json", string.Empty);
 
             var client = InitClient("MockClient", "MockSecret", mockHttp);
             SetRsaPublicKey(client);
 
-            var resp = client.DVSVerifySignature(SignatureToVerify, 0).Result;
+            var resp = client.DvsVerifySignature(SignatureToVerify, 0).Result;
 
             Assert.IsFalse(resp.IsSignatureValid);
             Assert.AreEqual(expected, resp.Status);
         }
 
         [Test]
-        public void Test_DVSVerifySignature_ServerResponseStatusOK_InvalidResponse()
+        public void Test_DvsVerifySignature_ServerResponseStatusOK_InvalidResponse()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "{\"no-certificate\":\"ey.fQ.nD\"}");
+            mockHttp.When(System.Net.Http.HttpMethod.Post, DvsVerifyEndpoint).Respond("application/json", "{\"no-certificate\":\"ey.fQ.nD\"}");
             var client = InitClient("MockClient", "MockSecret", mockHttp);
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                 Throws.TypeOf<ArgumentException>().And.Message.Contains("No `certificate` in the JSON response"));
 
             mockHttp.Clear();
-            mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "{\"certificate\":\"ey.fQ\"}");
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            mockHttp.When(System.Net.Http.HttpMethod.Post, DvsVerifyEndpoint).Respond("application/json", "{\"certificate\":\"ey.fQ\"}");
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Invalid DVS token"));
 
             mockHttp.Clear();
-            mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "{\"certificate\":\"eyfQnD\"}");
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            mockHttp.When(System.Net.Http.HttpMethod.Post, DvsVerifyEndpoint).Respond("application/json", "{\"certificate\":\"eyfQnD\"}");
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Invalid DVS token"));
 
             mockHttp.Clear();
-            mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "\"invalid\":\"json\"}");
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, 0),
+            mockHttp.When(System.Net.Http.HttpMethod.Post, DvsVerifyEndpoint).Respond("application/json", "\"invalid\":\"json\"}");
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, 0),
                Throws.TypeOf<Newtonsoft.Json.JsonReaderException>());
         }
 
         [Test]
-        public void Test_DVSVerifySignature_ServerResponseStatusOK_RequestAndResponseHashesDiffer()
+        public void Test_DvsVerifySignature_ServerResponseStatusOK_RequestAndResponseHashesDiffer()
         {
             MiraclClient client = InitClient();
             SetRsaPublicKey(client);
@@ -553,51 +553,60 @@ namespace MiraclAuthenticationTests
                                                 "040ef9b951522009900127820a9a956486b9e11ad05e18e4e86931460d310a2ecf106c9935dc0775a41892577b2f96f87c556dbe87f8fcf7fda546ec21752beada",
                                                 "0f9b60020f2a6108c052ba5d2ac0b24b8b7975ae2a2082ddb5d51b236662620e0c05f8310abe5fbda9ed80d638887ed2859f22b9c902bf88bd52dd083ce26e93144e03e61ad2e14722d29e21fde4eaa9f33f793db7da5e3f6211a7d99a8186e023c7fc60de7185a5d73d11b393530d0245256f7ecc0b1c7c96513b1c717a9b1b");
 
-            Assert.That(() => client.DVSVerifySignature(signature, 0),
+            Assert.That(() => client.DvsVerifySignature(signature, 0),
                Throws.TypeOf<ArgumentException>().And.Message.Contains("Signature hash and response hash do not match"));
         }
 
         [Test]
-        public void Test_DVSVerifySignature_ServerResponseStatusOK_RequestTimestampAfterResponseTimestamp()
+        public void Test_DvsVerifySignature_ServerResponseStatusOK_RequestTimestampAfterResponseTimestamp()
         {
             MiraclClient client = InitClient();
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, int.MaxValue),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, int.MaxValue),
               Throws.TypeOf<ArgumentException>().And.Message.Contains("The transaction is signed before the issue time"));
         }
 
         [TestCase("eyJjQXQiOjE0OTc0NDQ0NTEsImV4cCI6MTQ5NzQ0NDQ2MX0", "No `hash` in the JWT payload")]
         [TestCase("eyJleHAiOjE0OTc0NDQ0NjEsImhhc2giOiIxNTc2MDQ3Mzk3OWQyMDI3YmViY2EyMmQ0ZTBhZTQwZjQ5ZDA3NTZkZGE1MDdkZTcxZGY5OWJmMDRkMmE3ZDA3In0", "No `cAt` in the signature")]
-        public void Test_DVSVerifySignature_ServerResponseStatusOK_InvalidResponsePayload(string payload, string expected)
+        public void Test_DvsVerifySignature_ServerResponseStatusOK_InvalidResponsePayload(string payload, string expected)
         {
             string respContent = string.Format("{{\"certificate\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6InMxIn0.{0}.A19LAJpEZjFhwor0bj02AGh9\"}}", payload);
 
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(System.Net.Http.HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", respContent);
+            mockHttp.When(System.Net.Http.HttpMethod.Post, DvsVerifyEndpoint).Respond("application/json", respContent);
 
             var client = InitClient("MockClient", "MockSecret", mockHttp);
             SetRsaPublicKey(client);
 
-            Assert.That(() => client.DVSVerifySignature(SignatureToVerify, int.MaxValue),
+            Assert.That(() => client.DvsVerifySignature(SignatureToVerify, int.MaxValue),
               Throws.TypeOf<ArgumentException>().And.Message.Contains(expected));
         }
 
         [Test]
-        public void Test_DVSVerifySignature_ServerResponseStatusOK_PublicKeyNotMatching()
+        public void Test_DvsVerifySignature_ServerResponseStatusOK_PublicKeyNotMatching()
         {
             var client = InitClient();
             SetRsaPublicKey(client);
 
-            var resp = client.DVSVerifySignature(SignatureToVerify, 0).Result;
+            var resp = client.DvsVerifySignature(SignatureToVerify, 0).Result;
 
             Assert.IsFalse(resp.IsSignatureValid);
             Assert.AreEqual(VerificationStatus.InvalidSignature, resp.Status);
         }
-        #endregion // Tests
 
-        #region Methods
-        private static async Task<string> GetRequestUrl(MiraclClient client, string baseUri)
+        [Test]
+        public void Test_DvsCreateDocumentHash()
+        {
+            string document = "sample document";
+            string expected = "1789c9eeee7dcbf9a5e9b47374e244f85263dc45922a249d37f7ba9fd4efb850";
+
+            Assert.AreEqual(expected, new MiraclClient().DvsCreateDocumentHash(document));
+        }
+         #endregion // Tests
+
+            #region Methods
+            private static async Task<string> GetRequestUrl(MiraclClient client, string baseUri)
         {
             return await client.GetAuthorizationRequestUrlAsync(baseUri, new MiraclAuthenticationOptions { ClientId = "ClientID" });
         }
@@ -636,14 +645,14 @@ namespace MiraclAuthenticationTests
 
         private void SetRsaPublicKey(MiraclClient client)
         {
-            client.rsaPublicKey = new System.Security.Cryptography.RSACryptoServiceProvider();
+            client.dvsRsaPublicKey = new System.Security.Cryptography.RSACryptoServiceProvider();
         }
 
         private MockHttpMessageHandler GetDefaultMockHttp()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(HttpMethod.Post, DVSVerifyEndpoint).Respond("application/json", "{\"certificate\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6InMxIn0.eyJjQXQiOjE0OTc0NDQ0NTEsImV4cCI6MTQ5NzQ0NDQ2MSwiaGFzaCI6IjE1NzYwNDczOTc5ZDIwMjdiZWJjYTIyZDRlMGFlNDBmNDlkMDc1NmRkYTUwN2RlNzFkZjk5YmYwNGQyYTdkMDcifQ.A19LAJpEZjFhwor0bj02AGh9Nu_VGtyNXeJhqSe1uWc16kJA3Mi7Oe5ocFRUbb5xRuQ8TkzL9kjjiE3CgHLFftCDswHQqLX6nIH6oamVd0lt3fbgAu3pJBtK9U2BKSxwT7q-pQNFuPJTs-3P8XAwegJAbUouHUKuKL1zJTnDmQk\"}");
-            mockHttp.When(HttpMethod.Get, DVSPubKeysEndpoint).Respond("application/json", "{\"keys\": [{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"s1\",\"n\":\"kWp2zRA23Z3vTL4uoe8kTFptxBVFunIoP4t_8TDYJrOb7D1iZNDXVeEsYKp6ppmrTZDAgd-cNOTKLd4M39WJc5FN0maTAVKJc7NxklDeKc4dMe1BGvTZNG4MpWBo-taKULlYUu0ltYJuLzOjIrTHfarucrGoRWqM0sl3z2-fv9k\",\"e\":\"AQAB\"}]}");
+            mockHttp.When(HttpMethod.Post, DvsVerifyEndpoint).Respond("application/json", "{\"certificate\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6InMxIn0.eyJjQXQiOjE0OTc0NDQ0NTEsImV4cCI6MTQ5NzQ0NDQ2MSwiaGFzaCI6IjE1NzYwNDczOTc5ZDIwMjdiZWJjYTIyZDRlMGFlNDBmNDlkMDc1NmRkYTUwN2RlNzFkZjk5YmYwNGQyYTdkMDcifQ.A19LAJpEZjFhwor0bj02AGh9Nu_VGtyNXeJhqSe1uWc16kJA3Mi7Oe5ocFRUbb5xRuQ8TkzL9kjjiE3CgHLFftCDswHQqLX6nIH6oamVd0lt3fbgAu3pJBtK9U2BKSxwT7q-pQNFuPJTs-3P8XAwegJAbUouHUKuKL1zJTnDmQk\"}");
+            mockHttp.When(HttpMethod.Get, DvsPubKeysEndpoint).Respond("application/json", "{\"keys\": [{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"s1\",\"n\":\"kWp2zRA23Z3vTL4uoe8kTFptxBVFunIoP4t_8TDYJrOb7D1iZNDXVeEsYKp6ppmrTZDAgd-cNOTKLd4M39WJc5FN0maTAVKJc7NxklDeKc4dMe1BGvTZNG4MpWBo-taKULlYUu0ltYJuLzOjIrTHfarucrGoRWqM0sl3z2-fv9k\",\"e\":\"AQAB\"}]}");
             return mockHttp;
         }
 

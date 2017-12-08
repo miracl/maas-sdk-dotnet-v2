@@ -16,10 +16,10 @@ namespace SampleWebApp.Controllers
                 return View("Error");
             }
 
-            IdentityModel.Client.TokenResponse response = await HomeController.Client.ValidateAuthorization(Request.QueryString);
+            IdentityModel.Client.TokenResponse response = await HomeController.Client.ValidateAuthorizationAsync(Request.QueryString);
             if (response != null)
             {
-                var identity = await HomeController.Client.GetIdentity(response);
+                var identity = await HomeController.Client.GetIdentityAsync(response);
                 Request.GetOwinContext().Authentication.SignIn(identity);
             }
 

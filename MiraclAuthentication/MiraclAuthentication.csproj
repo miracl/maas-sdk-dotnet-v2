@@ -81,10 +81,12 @@
   <ItemGroup>
     <Compile Include="Constants.cs" />
     <Compile Include="DVS.cs" />
+    <Compile Include="IdentityInfo.cs" />
     <Compile Include="MiraclAuthenticationOptions.cs" />
     <Compile Include="MiraclClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitTestDetector.cs" />
+    <Compile Include="Identity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

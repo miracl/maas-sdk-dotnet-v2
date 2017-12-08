@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthentication", "MiraclAuthentication\MiraclAuthentication.csproj", "{F3E1857B-336C-471B-B8AA-18781FC407AD}"
 EndProject
@@ -11,14 +11,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{BAF9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthenticationTests", "MiraclAuthenticationTests\MiraclAuthenticationTests.csproj", "{D4801C21-134A-4704-8909-B86810EBE7D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthenticationApp", "Sample\MiraclAuthenticationApp.csproj", "{F078FEEC-BA82-45ED-B9E6-086E396816BA}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F1945AEF-8BE1-4EAC-BBC9-289477A63EBB}"
 	ProjectSection(SolutionItems) = preProject
 		LICENSE = LICENSE
 		README.md = README.md
 		VERSION = VERSION
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthenticationApp", "MiraclAuthenticationApp\MiraclAuthenticationApp.csproj", "{FA332CDC-17DB-45DE-82DD-ADAC88D59AA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclIdentityVerificationApp", "MiraclIdentityVerificationApp\MiraclIdentityVerificationApp.csproj", "{F078FEEC-BA82-45ED-B9E6-086E396816BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,6 +36,10 @@ Global
 		{D4801C21-134A-4704-8909-B86810EBE7D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4801C21-134A-4704-8909-B86810EBE7D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4801C21-134A-4704-8909-B86810EBE7D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA332CDC-17DB-45DE-82DD-ADAC88D59AA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA332CDC-17DB-45DE-82DD-ADAC88D59AA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA332CDC-17DB-45DE-82DD-ADAC88D59AA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA332CDC-17DB-45DE-82DD-ADAC88D59AA1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -45,6 +51,10 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F3E1857B-336C-471B-B8AA-18781FC407AD} = {76D0C616-F808-42FA-BEB0-06432A0D6FD1}
 		{D4801C21-134A-4704-8909-B86810EBE7D8} = {76D0C616-F808-42FA-BEB0-06432A0D6FD1}
+		{FA332CDC-17DB-45DE-82DD-ADAC88D59AA1} = {BAF920D7-5625-4A74-88F1-1A40173146AC}
 		{F078FEEC-BA82-45ED-B9E6-086E396816BA} = {BAF920D7-5625-4A74-88F1-1A40173146AC}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B73F7F09-1BB1-480E-9833-80CFDDF3CB5A}
 	EndGlobalSection
 EndGlobal

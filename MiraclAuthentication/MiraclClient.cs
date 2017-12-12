@@ -3,6 +3,7 @@ using IdentityModel.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens;
@@ -12,6 +13,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using SystemClaims = System.Security.Claims;
+using System.Net;
 
 namespace Miracl
 {
@@ -48,7 +50,6 @@ namespace Miracl
         {
             this.Options = options;
         }
-
         #endregion
 
         #region Members
@@ -98,7 +99,7 @@ namespace Miracl
         {
             get
             {
-                return TryGetValue("sub");
+                return TryGetUserInfoValue(Constants.UserIdClaim);
             }
         }
 
@@ -112,10 +113,9 @@ namespace Miracl
         {
             get
             {
-                return TryGetValue("email");
+                return TryGetUserInfoValue(Constants.EmailClaim);
             }
         }
-
         #endregion
 
         #region Methods
@@ -136,13 +136,13 @@ namespace Miracl
         {
             if (!Uri.IsWellFormedUriString(baseUri, UriKind.RelativeOrAbsolute))
             {
-                throw new ArgumentException("The baseUri is not well formed", "baseUri");
+                throw new ArgumentException("The baseUri is not well formed.", "baseUri");
             }
 
             this.Options = options ?? this.Options;
             if (this.Options == null)
             {
-                throw new ArgumentNullException("MiraclAuthenticationOptions should be set!");
+                throw new ArgumentNullException("options", "MiraclAuthenticationOptions should be set!");
             }
 
             await LoadOpenIdConnectConfigurationAsync();
@@ -165,7 +165,7 @@ namespace Miracl
         /// or
         /// Invalid state!
         /// </exception>
-        public async Task<TokenResponse> ValidateAuthorization(NameValueCollection requestQuery, string redirectUri = "")
+        public async Task<TokenResponse> ValidateAuthorizationAsync(NameValueCollection requestQuery, string redirectUri = "")
         {
             if (requestQuery == null)
             {
@@ -197,7 +197,7 @@ namespace Miracl
                 throw new ArgumentException("Invalid state!");
             }
 
-            return await ValidateAuthorizationCode(code, string.Empty, redirectUri);
+            return await ValidateAuthorizationCodeAsync(code, string.Empty, redirectUri);
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace Miracl
         /// The access token from the authentication response.
         /// </returns>
         /// <exception cref="System.ArgumentException">Empty redirect uri!</exception>
-        public async Task<TokenResponse> ValidateAuthorizationCode(string code, string userId, string redirectUri = "")
+        public async Task<TokenResponse> ValidateAuthorizationCodeAsync(string code, string userId, string redirectUri = "")
         {
             if (string.IsNullOrEmpty(redirectUri) && string.IsNullOrEmpty(callbackUrl))
             {
@@ -265,7 +265,7 @@ namespace Miracl
         /// <param name="response">The response from the authentication.</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">ValidateAuthorization method should be called first!</exception>
-        public async Task<ClaimsIdentity> GetIdentity(TokenResponse response)
+        public async Task<ClaimsIdentity> GetIdentityAsync(TokenResponse response)
         {
             if (response == null)
             {
@@ -311,7 +311,7 @@ namespace Miracl
         /// or
         /// The transaction is signed before the issue time
         /// </exception>
-        public async Task<VerificationResult> DvsVerifySignature(Signature signature, int ts)
+        public async Task<VerificationResult> DvsVerifySignatureAsync(Signature signature, int ts)
         {
             ValidateInput(signature, ts);
 
@@ -322,7 +322,7 @@ namespace Miracl
                 Type = "verification"
             };
 
-            var resp = await RequestSignature(p);
+            var resp = await RequestSignatureAsync(p);
             string respContent;
             switch (resp.StatusCode)
             {
@@ -356,6 +356,142 @@ namespace Miracl
             }
         }
 
+        /// <summary>
+        /// Validates the JSON received from the Platform when Full Custom Verification with Push type is used.
+        /// </summary>
+        /// <param name="newUserJson">A JSON string containing JWT with the user information which the Platform sends for activation.</param>
+        /// <returns>An instance of the <see cref="Identity"/> class.</returns>
+        /// <exception cref="ArgumentException">
+        /// No `new_user_token` in the JSON input
+        /// or
+        /// Invalid response
+        /// </exception>
+        public Identity HandleNewIdentityPush(string newUserJson)
+        {
+            var newUserToken = JObject.Parse(newUserJson).TryGetString("new_user_token");
+            if (newUserToken == null)
+            {
+                throw new ArgumentException("No `new_user_token` in the JSON input.");
+            }
+
+            var claims = ValidateToken(newUserToken, this.Options.CustomerId).Claims;
+            var userData = claims.FirstOrDefault(c => c.Type.Equals("events"));
+            if (userData == null)
+            {
+                throw new ArgumentException("Invalid response.");
+            }
+
+            return CreateIdentity(userData);
+        }
+
+        /// <summary>
+        /// Makes a request to the Platform to check if there is a started registration for the specified userId.
+        /// </summary>
+        /// <param name="userId">The user identifier, e.g. an email address.</param>
+        /// <returns>An instance of the <see cref="Identity"/> class.</returns>
+        /// <exception cref="Exception">
+        /// No connection with the Platform at " + baseAddr
+        /// or
+        /// Cannot generate a user from the server response
+        /// </exception>
+        public async Task<Identity> HandleNewIdentityPullAsync(string userId)
+        {
+            var httpClient = this.Options.BackchannelHttpHandler != null
+               ? new HttpClient(this.Options.BackchannelHttpHandler)
+               : new HttpClient();
+
+            var postData = JsonConvert.SerializeObject(new { userId = userId });
+            var content = new StringContent(postData, Encoding.UTF8, "application/json");
+            httpClient.SetBasicAuthentication(this.Options.ClientId, this.Options.ClientSecret);
+
+            var baseAddr = GetBaseAddress() + Constants.PullEndpoint;
+            var response = await httpClient.PostAsync(baseAddr, content);
+
+            if (response.StatusCode == HttpStatusCode.RequestTimeout)
+            {
+                throw new Exception(string.Format("No connection with the Platform at {0}.", baseAddr));
+            }
+
+            Identity identity;
+            try
+            {
+                var respContent = await response.Content.ReadAsStringAsync();
+                identity = JsonConvert.DeserializeObject(respContent, typeof(Identity)) as Identity;
+            }
+            catch
+            {
+                throw new Exception("Cannot generate a user from the server response.");
+            }
+
+            return identity;
+        }
+
+        /// <summary>
+        /// Activates an identity to the Platform.
+        /// </summary>
+        /// <param name="hashMPinId">The hash of the M-PIN id of the registering identity.</param>
+        /// <param name="activateKey">The activate key of the identity.</param>
+        /// <returns>The status code of the response from the Platform when activating the identity.</returns>
+        public async Task<HttpStatusCode> ActivateIdentityAsync(string hashMPinId, string activateKey)
+        {
+            var httpClient = this.Options.BackchannelHttpHandler != null
+                ? new HttpClient(this.Options.BackchannelHttpHandler)
+                : new HttpClient();
+
+            var postData = JsonConvert.SerializeObject(new { hashMPinId = hashMPinId, activateKey = activateKey });
+            var content = new StringContent(postData, Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PostAsync(GetBaseAddress() + Constants.ActivateEndpoint, content);
+            if (response.StatusCode != HttpStatusCode.OK || response.Content == null)
+            {
+                return response.StatusCode;
+            }
+
+            var respContent = await response.Content.ReadAsStringAsync();
+            var respJson = JObject.Parse(respContent);
+            if (!IsJsonStringValid(respJson, "status", "OK") || !IsJsonStringValid(respJson, "message", "Activated"))
+            {
+                return HttpStatusCode.InternalServerError;
+            }
+
+            return HttpStatusCode.OK;
+        }
+        
+        /// <summary>
+        /// Gets the identity information.
+        /// </summary>
+        /// <param name="hashMPinId">The hash of the M-PIN id.</param>
+        /// <param name="activateKey">The activate key of the identity.</param>
+        /// <returns>An instance of the <see cref="IdentityInfo"/> class.</returns>
+        /// <exception cref="System.ArgumentException">Invalid response</exception>
+        public async Task<IdentityInfo> GetIdentityInfoAsync(string hashMPinId, string activateKey)
+        {
+            var httpClient = this.Options.BackchannelHttpHandler != null
+               ? new HttpClient(this.Options.BackchannelHttpHandler)
+               : new HttpClient();
+
+            var postData = JsonConvert.SerializeObject(new { hashMPinId = hashMPinId, activateKey = activateKey });
+            var content = new StringContent(postData, Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PostAsync(GetBaseAddress() + Constants.GetIdentityInfoEndpoint, content);
+            if (response.StatusCode != HttpStatusCode.OK || response.Content == null)
+            {
+                return null;
+            }
+
+            var respContent = await response.Content.ReadAsStringAsync();
+            var respJson = JObject.Parse(respContent);
+
+            string userId = TryGetTokenDataByName(respJson, "userId");
+            string deviceName = TryGetTokenDataByName(respJson, "deviceName");
+
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(deviceName))
+            {
+                throw new ArgumentException("Invalid response.");
+            }
+
+            return new IdentityInfo(userId, deviceName);
+        }
         #endregion
 
         #region Private
@@ -401,26 +537,26 @@ namespace Miracl
                 throw new ArgumentException("Invalid nonce!");
             }
 
-            this.idTokenClaims = ValidateIdentityToken(this.accessTokenResponse.IdentityToken);
+            this.idTokenClaims = ValidateToken(this.accessTokenResponse.IdentityToken, this.Options.ClientId);
             return isUserIdValid;
         }
 
-        private ClaimsPrincipal ValidateIdentityToken(string idToken)
+        private ClaimsPrincipal ValidateToken(string token, string audience)
         {
-            string kid = GetKey(idToken);
+            string kid = GetKey(token);
 
             SecurityToken securityToken;
             var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-            var jwt = jwtSecurityTokenHandler.ReadToken(idToken) as JwtSecurityToken;
+            var jwt = jwtSecurityTokenHandler.ReadToken(token) as JwtSecurityToken;
             var rsaPublicKey = CreatePublicKey(kid);
 
             var prms = new TokenValidationParameters()
             {
                 IssuerSigningToken = new RsaSecurityToken(rsaPublicKey, kid),
-                IssuerSigningKeyResolver = (token, securityToken2, keyIdentifier, validationParameters) =>
+                IssuerSigningKeyResolver = (t, securityToken2, keyIdentifier, validationParameters) =>
                                            { return new RsaSecurityKey(rsaPublicKey); },
                 ValidIssuer = doc.TryGetString(OidcConstants.Discovery.Issuer),
-                ValidAudience = this.Options.ClientId
+                ValidAudience = audience
             };
 
             if (UnitTestDetector.IsInUnitTest)
@@ -428,7 +564,7 @@ namespace Miracl
                 prms.ValidateLifetime = false;
             }
 
-            return jwtSecurityTokenHandler.ValidateToken(idToken, prms, out securityToken);
+            return jwtSecurityTokenHandler.ValidateToken(token, prms, out securityToken);
         }
 
         private static string GetKey(string jwt)
@@ -437,7 +573,7 @@ namespace Miracl
             if (parts.Length != 3)
             {
                 // signed JWT should have header, payload and signature part, separated with a dot
-                throw new ArgumentException("Invalid token format");
+                throw new ArgumentException("Invalid token format.");
             }
 
             string header = parts[0];
@@ -484,7 +620,7 @@ namespace Miracl
             }
 
             var idToken = ParseJwt(identityToken);
-            var id = idToken.GetValue("sub");
+            var id = idToken.GetValue(Constants.UserIdClaim);
             return id == null ? string.Empty : id.ToString();
         }
 
@@ -512,17 +648,17 @@ namespace Miracl
             {
                 var dvsClient = GetDiscoveryClient(Constants.DvsPublicKeyString);
                 var pkDoc = await dvsClient.GetAsync();
-                await ReadPublicKey(pkDoc);
+                await ReadPublicKeyAsync(pkDoc);
             }
         }
 
-        private async Task ReadPublicKey(DiscoveryResponse pkDoc)
+        private async Task ReadPublicKeyAsync(DiscoveryResponse pkDoc)
         {
             var httpClient = this.Options.BackchannelHttpHandler != null ? new HttpClient(this.Options.BackchannelHttpHandler) : new HttpClient();
             var resp = await httpClient.GetAsync(GetBaseAddress() + Constants.DvsPublicKeyString);
             if (resp.StatusCode != System.Net.HttpStatusCode.OK || resp.Content == null)
             {
-                throw new ArgumentException("Cannot read public key from " + GetBaseAddress() + Constants.DvsPublicKeyString);
+                throw new ArgumentException(string.Format("Cannot read public key from {0}.", GetBaseAddress() + Constants.DvsPublicKeyString));
             }
             var content = await resp.Content.ReadAsStringAsync();
             pkDoc.KeySet = new IdentityModel.Jwk.JsonWebKeySet(content);
@@ -558,13 +694,13 @@ namespace Miracl
 
             return discoveryClient;
         }
-        
-        private async Task<HttpResponseMessage> RequestSignature(Payload p)
+
+        private async Task<HttpResponseMessage> RequestSignatureAsync(Payload p)
         {
             var httpClient = this.Options.BackchannelHttpHandler != null
                 ? new HttpClient(this.Options.BackchannelHttpHandler)
                 : new HttpClient();
-            
+
             var payloadString = JsonConvert.SerializeObject(p);
             var content = new StringContent(payloadString, Encoding.UTF8, "application/json");
             httpClient.SetBasicAuthentication(this.Options.ClientId, this.Options.ClientSecret);
@@ -577,13 +713,13 @@ namespace Miracl
             var respToken = JObject.Parse(respContent).TryGetString("certificate");
             if (respToken == null)
             {
-                throw new ArgumentException("No `certificate` in the JSON response");
+                throw new ArgumentException("No `certificate` in the JSON response.");
             }
 
             var parts = respToken.Split('.');
             if (parts.Length != 3)
             {
-                throw new ArgumentException("Invalid DVS token format");
+                throw new ArgumentException("Invalid DVS token format.");
             }
 
             byte[] jwtSignature = Base64Url.Decode(parts[2]);
@@ -592,24 +728,24 @@ namespace Miracl
             var hash = jwtPayload.TryGetString("hash");
             if (hash == null)
             {
-                throw new ArgumentException("No `hash` in the JWT payload");
+                throw new ArgumentException("No `hash` in the JWT payload.");
             }
 
             var docHash = p.Signature.Hash;
             if (!docHash.Equals(hash))
             {
-                throw new ArgumentException("Signature hash and response hash do not match");
+                throw new ArgumentException("Signature hash and response hash do not match.");
             }
 
             var cAt = jwtPayload.TryGetInt("cAt");
             if (cAt == null)
             {
-                throw new ArgumentException("No `cAt` in the signature");
+                throw new ArgumentException("No `cAt` in the signature.");
             }
 
             if (p.Timestamp > cAt)
             {
-                throw new ArgumentException("The transaction is signed before the issue time");
+                throw new ArgumentException("The transaction is signed before the issue time.");
             }
 
             return this.dvsRsaPublicKey.VerifyData(Encoding.UTF8.GetBytes(parts[0] + '.' + parts[1]), "SHA256", jwtSignature);
@@ -619,22 +755,22 @@ namespace Miracl
         {
             if (signature == null)
             {
-                throw new ArgumentNullException("Signature cannot be null");
+                throw new ArgumentNullException("signature", "Signature cannot be null.");
             }
 
             if (ts < 0)
             {
-                throw new ArgumentException("Timestamp cannot has a negative value");
+                throw new ArgumentException("Timestamp cannot has a negative value.");
             }
 
             if (this.Options == null)
             {
-                throw new InvalidOperationException("No Options for verification - client credentials are used for the verification");
+                throw new InvalidOperationException("No Options for verification - client credentials are used for the verification.");
             }
 
             if (this.dvsRsaPublicKey == null)
             {
-                throw new ArgumentException("DVS public key not found");
+                throw new ArgumentException("DVS public key not found.");
             }
         }
 
@@ -648,11 +784,56 @@ namespace Miracl
             return this.userInfo.Claims;
         }
 
+        private bool IsJsonStringValid(JObject json, string name, string expectedValue)
+        {
+            var prm = json.TryGetString(name);
+            return !string.IsNullOrEmpty(prm) && prm == expectedValue;
+        }
+
+        internal Identity CreateIdentity(Claim userData)
+        {
+            var data = JObject.Parse(userData.Value).TryGetValue("newUser");
+            if (data != null && !data.HasValues)
+            {
+                throw new ArgumentException("Invalid data for creating a new identity.");
+            }
+
+            string userId = TryGetTokenDataByName(data, "userID");
+            string deviceName = TryGetTokenDataByName(data, "deviceName");
+            string hash = TryGetTokenDataByName(data, "hashMPinID");
+            string activateKey = TryGetTokenDataByName(data, "activateKey");
+            string exTimeData = TryGetTokenDataByName(data, "expireTime");
+            Int64 exTime;
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(deviceName) ||
+                string.IsNullOrEmpty(hash) || string.IsNullOrEmpty(activateKey) ||
+                !Int64.TryParse(exTimeData, out exTime))
+            {
+                throw new ArgumentException("Invalid data for creating a new identity.");
+            }
+
+            return new Identity(userId, deviceName, hash, activateKey, exTime);
+        }
+
+        internal string TryGetTokenDataByName(JToken data, string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName))
+            {
+                return string.Empty;
+            }
+            var d = data.FirstOrDefault(t => (t as JProperty).Name.Equals(propertyName)) as JProperty;
+            if (d == null)
+            {
+                return string.Empty;
+            }
+            
+            return d.Value.ToString();
+        }
+
         internal async Task FillClaimsAsync(TokenResponse response)
         {
             if (response == null || string.IsNullOrWhiteSpace(response.IdentityToken) || string.IsNullOrEmpty(response.AccessToken))
             {
-                throw new ArgumentNullException("The response, its IdentityToken or AccessToken are null!");
+                throw new ArgumentNullException("response", "The response, its IdentityToken or AccessToken are null!");
             }
 
             this.claims = new List<SystemClaims.Claim>();
@@ -668,7 +849,7 @@ namespace Miracl
             }
         }
 
-        internal string TryGetValue(string propertyName)
+        internal string TryGetUserInfoValue(string propertyName)
         {
             if (this.userInfo == null || this.userInfo.Json == null)
                 return string.Empty;

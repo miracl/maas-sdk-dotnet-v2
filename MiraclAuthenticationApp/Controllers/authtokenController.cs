@@ -29,7 +29,7 @@ namespace SampleWebApp.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            var token = await HomeController.Client.ValidateAuthorizationCode(code.ToString(), userId.ToString());
+            var token = await HomeController.Client.ValidateAuthorizationCodeAsync(code.ToString(), userId.ToString());
             if (token == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.Unauthorized);

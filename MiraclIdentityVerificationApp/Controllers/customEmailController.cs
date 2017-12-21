@@ -15,7 +15,6 @@ namespace MiraclIdentityVerificationApp.Controllers
         // GET: customEmail
         public async Task<ActionResult> Index()
         {
-            ViewBag.IsIdentityActivated = false;
             if (Request.QueryString == null || string.IsNullOrEmpty(Request.QueryString["i"]) || string.IsNullOrEmpty(Request.QueryString["s"]))
             {
                 return View();
@@ -25,6 +24,21 @@ namespace MiraclIdentityVerificationApp.Controllers
             var hashMPinId = Request.QueryString["i"];
 
             ViewBag.Info = await HomeController.Client.GetIdentityInfoAsync(hashMPinId, activateKey);
+
+            TempData["info"] = ViewBag.Info;
+            TempData["hashMPinId"] = hashMPinId;
+            TempData["activateKey"] = activateKey;
+
+            return View();
+        }
+
+        public async Task<ActionResult> Activate()
+        {
+            ViewBag.IsIdentityActivated = false;
+
+            var hashMPinId = TempData["hashMPinId"].ToString();
+            var activateKey = TempData["activateKey"].ToString();
+            ViewBag.Info = TempData["info"];
 
             // apply a custom logic here for validating the identity before activating it
             if (ViewBag.Info != null)

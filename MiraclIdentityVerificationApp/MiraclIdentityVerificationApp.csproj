@@ -212,8 +212,12 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Scripts\jquery-1.10.2.min.map" />
     <Content Include="Views\login\Index.cshtml" />
-    <Content Include="Views\customEmail\Index.cshtml" />
+    <Content Include="Views\customEmail\Activate.cshtml" />
     <Content Include="Views\pull\Index.cshtml" />
+    <Content Include="Views\customEmail\Index.cshtml" />
+    <Content Include="Views\pull\Activate.cshtml" />
+    <Content Include="Views\push\Index.cshtml" />
+    <Content Include="Views\push\_IdentitiesTablePartial.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

@@ -30,8 +30,7 @@
                                         HttpMethod = "POST",
                                     }))
                                     {
-                                        @Html.Hidden("mPinIdHash", Model[i].Identity.MPinIdHash)
-                                        @Html.Hidden("activateKey", Model[i].Identity.ActivateKey)
+                                        @Html.Hidden("mPinIdHash", Model[i].Identity.ActivationParams.MPinIdHash)
                                         <input type="submit" value="Activate" class="btn btn-primary" />
                                     }
                                 </td>

@@ -29,8 +29,9 @@ else
     <p>
         Click the button below to start using <strong>@ViewBag.Info.Id</strong> as your MIRACL Trust<sup>®</sup> identity on device <strong>@ViewBag.Info.DeviceName</strong>
     </p>
-    using (Html.BeginForm())
+    using (Html.BeginForm("Activate", "pull"))
     {
-        @Html.ActionLink("CONFIRM AND ACTIVATE", "Activate", "pull", null, new { @class = "btn btn-primary" })
+        <input type="hidden" name="id" value="@ViewBag.Info.Id" />
+        <input type="submit" value="CONFIRM AND ACTIVATE" class="btn btn-primary" />
     }
 }

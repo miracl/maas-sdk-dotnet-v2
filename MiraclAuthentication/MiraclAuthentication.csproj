@@ -81,6 +81,7 @@
   <ItemGroup>
     <Compile Include="Constants.cs" />
     <Compile Include="DVS.cs" />
+    <Compile Include="IdentityActivationParams.cs" />
     <Compile Include="IdentityInfo.cs" />
     <Compile Include="MiraclAuthenticationOptions.cs" />
     <Compile Include="MiraclClient.cs" />

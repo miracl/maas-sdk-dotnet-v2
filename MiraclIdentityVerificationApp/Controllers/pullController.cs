@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Miracl;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,6 +11,8 @@ namespace MiraclIdentityVerificationApp.Controllers
 {
     public class pullController : Controller
     {
+        private static Dictionary<string, Identity> StartedRegistration = new Dictionary<string, Identity>();
+
         public ActionResult Index()
         {
             ViewBag.ActivationStarted = false;
@@ -26,7 +29,7 @@ namespace MiraclIdentityVerificationApp.Controllers
             {
                 ViewBag.ActivationStarted = true;
                 ViewBag.Info = identity.Info;
-                TempData["identity"] = identity;
+                StartedRegistration.Add(id, identity);
             }
             else
             {
@@ -39,22 +42,26 @@ namespace MiraclIdentityVerificationApp.Controllers
             return View();
         }
 
-        public async Task<ActionResult> Activate()
+        [HttpPost]
+        public async Task<ActionResult> Activate(string id)
         {
             ViewBag.IsIdentityActivated = false;
-            var identity = TempData["identity"] as Miracl.Identity;
-
-            // check here if the identity is valid and if so, call ActivateIdentityAsync of the current client object
-            if (identity != null)
+            if (StartedRegistration.ContainsKey(id))
             {
-                if (await HomeController.Client.ActivateIdentityAsync(identity.MPinIdHash, identity.ActivateKey) == HttpStatusCode.OK)
+                var identity = StartedRegistration[id];
+
+                // check here if the identity is valid and if so, call ActivateIdentityAsync of the current client object
+                if (identity != null)
                 {
-                    var resStatusCode = await HomeController.Client.ActivateIdentityAsync(identity.MPinIdHash, identity.ActivateKey);
-                    ViewBag.IsIdentityActivated = !identity.IsEmpty() && resStatusCode == HttpStatusCode.OK;
-                    ViewBag.Info = identity.Info;
+                    var resStatusCode = await HomeController.Client.ActivateIdentityAsync(identity.ActivationParams);
+                    if (resStatusCode == HttpStatusCode.OK)
+                    {
+                        ViewBag.IsIdentityActivated = !identity.IsEmpty();
+                        ViewBag.Info = identity.Info;
+                        StartedRegistration.Remove(id);
+                    }
                 }
             }
-
             return View();
         }
     }

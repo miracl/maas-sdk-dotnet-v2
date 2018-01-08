@@ -11,12 +11,12 @@ namespace MiraclIdentityVerificationApp.Controllers
 {
     public class pushController : Controller
     {
-        private static List<PushViewModel> data = new List<PushViewModel>();
+        private static List<PushViewModel> Data = new List<PushViewModel>();
 
         public ActionResult Index()
         {
             UpdateDataStatus();
-            return View(data);
+            return View(Data);
         }
 
         [HttpPost]
@@ -28,7 +28,7 @@ namespace MiraclIdentityVerificationApp.Controllers
 
             if (identity != null && !identity.IsExpired())
             {
-                data.Add(new PushViewModel(identity));
+                Data.Add(new PushViewModel(identity));
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
 
@@ -38,16 +38,16 @@ namespace MiraclIdentityVerificationApp.Controllers
         public ActionResult GetIdentities()
         {
             UpdateDataStatus();
-            return PartialView("_IdentitiesTablePartial", data);
+            return PartialView("_IdentitiesTablePartial", Data);
         }
 
         [HttpPost]
-        public async Task<ActionResult> Activate(string mPinIdHash, string activateKey)
+        public async Task<ActionResult> Activate(string mPinIdHash)
         {
-            var d = data.FirstOrDefault(id => id.Identity.MPinIdHash == mPinIdHash);
-            if (d != null && !d.Identity.IsExpired())
+            var d = Data.FirstOrDefault(id => id.Identity.ActivationParams.MPinIdHash == mPinIdHash);
+            if (d != null && d.Identity != null && !d.Identity.IsExpired())
             {
-                var respStatusCode = await HomeController.Client.ActivateIdentityAsync(mPinIdHash, activateKey);
+                var respStatusCode = await HomeController.Client.ActivateIdentityAsync(d.Identity.ActivationParams);
                 if (respStatusCode != HttpStatusCode.OK)
                 {
                     ViewBag.ErrorMsg = string.Format("Cannot activate identity. Server responded with status {0} {1}.", (int)respStatusCode, respStatusCode);
@@ -62,7 +62,7 @@ namespace MiraclIdentityVerificationApp.Controllers
 
         private void UpdateDataStatus()
         {
-            foreach (var d in data)
+            foreach (var d in Data)
             {
                 if (d.Status == IdentityStatus.Pending && d.Identity.IsExpired())
                 {

@@ -3,17 +3,17 @@ using IdentityModel.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using SystemClaims = System.Security.Claims;
-using System.Net;
 
 namespace Miracl
 {
@@ -31,6 +31,9 @@ namespace Miracl
         private TokenResponse accessTokenResponse;
         private List<Claim> claims;
         private ClaimsPrincipal idTokenClaims;
+        // There could be more than one auth started at a time with the same client, 
+        // so save the auth data on auth start and delete it when auth happens 
+        internal Dictionary<string, string> AuthData = new Dictionary<string, string>(); 
         #endregion
 
         #region C'tor
@@ -192,12 +195,17 @@ namespace Miracl
                     string.Format("requestQuery does not have the proper \"{0}\" and \"{1}\" parameteres.", Constants.Code, Constants.State), "requestQuery");
             }
 
-            if (!State.Equals(returnedState, StringComparison.Ordinal))
+            if (!this.AuthData.Keys.Any(k => k.Equals(returnedState, StringComparison.Ordinal)))
             {
-                throw new ArgumentException("Invalid state!");
+                throw new ArgumentException("Invalid state!");            
             }
 
-            return await ValidateAuthorizationCodeAsync(code, string.Empty, redirectUri);
+            this.State = returnedState;
+            this.Nonce = this.AuthData[returnedState];
+
+            var response = await ValidateAuthorizationCodeAsync(code, string.Empty, redirectUri);
+            this.AuthData.Remove(this.State);
+            return response;
         }
 
         /// <summary>
@@ -243,6 +251,7 @@ namespace Miracl
                 this.State = null;
                 this.Nonce = null;
                 this.Options = null;
+                this.AuthData.Clear();
             }
 
             this.callbackUrl = null;
@@ -429,16 +438,23 @@ namespace Miracl
         /// <summary>
         /// Activates an identity to the Platform.
         /// </summary>
-        /// <param name="hashMPinId">The hash of the M-PIN id of the registering identity.</param>
-        /// <param name="activateKey">The activate key of the identity.</param>
-        /// <returns>The status code of the response from the Platform when activating the identity.</returns>
-        public async Task<HttpStatusCode> ActivateIdentityAsync(string hashMPinId, string activateKey)
+        /// <param name="activationParams">The activation parameters.</param>
+        /// <returns>
+        /// The status code of the response from the Platform when activating the identity.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">activationParams</exception>
+        public async Task<HttpStatusCode> ActivateIdentityAsync(IdentityActivationParams activationParams)
         {
+            if (activationParams == null)
+            {
+                throw new ArgumentNullException("activationParams");
+            }
+
             var httpClient = this.Options.BackchannelHttpHandler != null
                 ? new HttpClient(this.Options.BackchannelHttpHandler)
                 : new HttpClient();
 
-            var postData = JsonConvert.SerializeObject(new { hashMPinId = hashMPinId, activateKey = activateKey });
+            var postData = JsonConvert.SerializeObject(new { hashMPinId = activationParams.MPinIdHash, activateKey = activationParams.ActivateKey });
             var content = new StringContent(postData, Encoding.UTF8, "application/json");
 
             var response = await httpClient.PostAsync(GetBaseAddress() + Constants.ActivateEndpoint, content);
@@ -453,24 +469,31 @@ namespace Miracl
             {
                 return HttpStatusCode.InternalServerError;
             }
-
+            
             return HttpStatusCode.OK;
         }
-        
+
         /// <summary>
         /// Gets the identity information.
         /// </summary>
-        /// <param name="hashMPinId">The hash of the M-PIN id.</param>
-        /// <param name="activateKey">The activate key of the identity.</param>
-        /// <returns>An instance of the <see cref="IdentityInfo"/> class.</returns>
-        /// <exception cref="System.ArgumentException">Invalid response</exception>
-        public async Task<IdentityInfo> GetIdentityInfoAsync(string hashMPinId, string activateKey)
+        /// <param name="activationParams">The activation parameters.</param>
+        /// <returns>
+        /// An instance of the <see cref="IdentityInfo" /> class.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">activationParams</exception>
+        /// <exception cref="ArgumentException">Invalid response.</exception>
+        public async Task<IdentityInfo> GetIdentityInfoAsync(IdentityActivationParams activationParams)
         {
+            if (activationParams == null)
+            {
+                throw new ArgumentNullException("activationParams");
+            }
+
             var httpClient = this.Options.BackchannelHttpHandler != null
                ? new HttpClient(this.Options.BackchannelHttpHandler)
                : new HttpClient();
 
-            var postData = JsonConvert.SerializeObject(new { hashMPinId = hashMPinId, activateKey = activateKey });
+            var postData = JsonConvert.SerializeObject(new { hashMPinId = activationParams.MPinIdHash, activateKey = activationParams.ActivateKey });
             var content = new StringContent(postData, Encoding.UTF8, "application/json");
 
             var response = await httpClient.PostAsync(GetBaseAddress() + Constants.GetIdentityInfoEndpoint, content);
@@ -492,6 +515,24 @@ namespace Miracl
 
             return new IdentityInfo(userId, deviceName);
         }
+
+        /// <summary>
+        /// Parses the query string for the custom email verification.
+        /// </summary>
+        /// <param name="queryString">The query string.</param>
+        /// <returns>An instance of the <see cref="IdentityActivationParams" /> class or null.</returns>
+        public IdentityActivationParams ParseCustomEmailQueryString(NameValueCollection queryString)
+        {
+            if (queryString == null || string.IsNullOrEmpty(queryString["i"]) || string.IsNullOrEmpty(queryString["s"]))
+            {
+                return null;
+            }
+
+            var activateKey = queryString["s"];
+            var hashMPinId = queryString["i"];
+
+            return new IdentityActivationParams(hashMPinId, activateKey);
+        }
         #endregion
 
         #region Private
@@ -507,6 +548,7 @@ namespace Miracl
         {
             this.State = stateString ?? Guid.NewGuid().ToString("N");
             this.Nonce = CryptoRandom.CreateUniqueId();
+            this.AuthData.Add(this.State, this.Nonce);
 
             this.callbackUrl = baseUri.TrimEnd('/') + this.Options.CallbackPath;
 
@@ -649,6 +691,11 @@ namespace Miracl
                 var dvsClient = GetDiscoveryClient(Constants.DvsPublicKeyString);
                 var pkDoc = await dvsClient.GetAsync();
                 await ReadPublicKeyAsync(pkDoc);
+            }
+
+            if (doc == null || doc.KeySet == null)
+            {
+                throw new Exception("Unable to read the discovery data.");
             }
         }
 

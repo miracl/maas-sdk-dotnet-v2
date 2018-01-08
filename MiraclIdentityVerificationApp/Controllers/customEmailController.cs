@@ -12,43 +12,44 @@ namespace MiraclIdentityVerificationApp.Controllers
 {
     public class customEmailController : Controller
     {
+        private static Dictionary<string, Identity> StartedRegistration = new Dictionary<string, Identity>();
+
         // GET: customEmail
         public async Task<ActionResult> Index()
         {
-            if (Request.QueryString == null || string.IsNullOrEmpty(Request.QueryString["i"]) || string.IsNullOrEmpty(Request.QueryString["s"]))
+            var activationParams = HomeController.Client.ParseCustomEmailQueryString(Request.QueryString);
+            if (activationParams != null)
             {
-                return View();
+                var info = await HomeController.Client.GetIdentityInfoAsync(activationParams);
+                if (info != null)
+                {
+                    var identity = new Identity(info, activationParams, 0);
+                    StartedRegistration.Add(info.Id, identity);
+                    ViewBag.Info = info;
+                }
             }
-
-            var activateKey = Request.QueryString["s"];
-            var hashMPinId = Request.QueryString["i"];
-
-            ViewBag.Info = await HomeController.Client.GetIdentityInfoAsync(hashMPinId, activateKey);
-
-            TempData["info"] = ViewBag.Info;
-            TempData["hashMPinId"] = hashMPinId;
-            TempData["activateKey"] = activateKey;
 
             return View();
         }
 
-        public async Task<ActionResult> Activate()
+        [HttpPost]
+        public async Task<ActionResult> Activate(string id)
         {
             ViewBag.IsIdentityActivated = false;
-
-            var hashMPinId = TempData["hashMPinId"].ToString();
-            var activateKey = TempData["activateKey"].ToString();
-            ViewBag.Info = TempData["info"];
-
-            // apply a custom logic here for validating the identity before activating it
-            if (ViewBag.Info != null)
+            if (StartedRegistration.ContainsKey(id))
             {
-                if (await HomeController.Client.ActivateIdentityAsync(hashMPinId, activateKey) == HttpStatusCode.OK)
+                var identity = StartedRegistration[id];
+                ViewBag.Info = identity.Info;
+
+                // apply a custom logic here for validating the identity before activating it
+                if (ViewBag.Info != null)
                 {
-                    ViewBag.IsIdentityActivated = true;
+                    if (await HomeController.Client.ActivateIdentityAsync(identity.ActivationParams) == HttpStatusCode.OK)
+                    {
+                        ViewBag.IsIdentityActivated = true;
+                    }
                 }
             }
-
             return View();
         }
     }

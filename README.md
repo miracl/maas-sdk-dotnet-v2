@@ -136,6 +136,7 @@ The methods which the Relying Party application should use to facilitate these o
 - `ActivateIdentityAsync` - activates the identity in the Platform and the user could continue its registration and setup a PIN
 - `HandleNewIdentityPush` - validates the request from the Platform when Full Custom Verification with Push type used and return an `Identity` object
 - `HandleNewIdentityPullAsync` - requests from the Platform if there is a started registration for the specified identity id and returns an `Identity` for it if so
+- `ParseCustomEmailQueryString` - parses the query string for the Custom Email Verification and returns an `IdentityActivationParams` object
 
 ## Samples
 

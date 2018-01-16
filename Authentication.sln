@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2010
+VisualStudioVersion = 15.0.27130.2020
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthentication", "MiraclAuthentication\MiraclAuthentication.csproj", "{F3E1857B-336C-471B-B8AA-18781FC407AD}"
 EndProject
@@ -21,6 +21,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclAuthenticationApp", "MiraclAuthenticationApp\MiraclAuthenticationApp.csproj", "{FA332CDC-17DB-45DE-82DD-ADAC88D59AA1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclIdentityVerificationApp", "MiraclIdentityVerificationApp\MiraclIdentityVerificationApp.csproj", "{F078FEEC-BA82-45ED-B9E6-086E396816BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiraclDvsSigningApp", "MiraclDvsSigningApp\MiraclDvsSigningApp.csproj", "{1D28B0FD-8A03-4865-AE86-F6D4046C18EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,10 @@ Global
 		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F078FEEC-BA82-45ED-B9E6-086E396816BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D28B0FD-8A03-4865-AE86-F6D4046C18EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D28B0FD-8A03-4865-AE86-F6D4046C18EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D28B0FD-8A03-4865-AE86-F6D4046C18EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D28B0FD-8A03-4865-AE86-F6D4046C18EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -53,6 +59,7 @@ Global
 		{D4801C21-134A-4704-8909-B86810EBE7D8} = {76D0C616-F808-42FA-BEB0-06432A0D6FD1}
 		{FA332CDC-17DB-45DE-82DD-ADAC88D59AA1} = {BAF920D7-5625-4A74-88F1-1A40173146AC}
 		{F078FEEC-BA82-45ED-B9E6-086E396816BA} = {BAF920D7-5625-4A74-88F1-1A40173146AC}
+		{1D28B0FD-8A03-4865-AE86-F6D4046C18EC} = {BAF920D7-5625-4A74-88F1-1A40173146AC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B73F7F09-1BB1-480E-9833-80CFDDF3CB5A}

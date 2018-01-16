@@ -14,7 +14,7 @@ namespace Miracl
         internal const string RefreshToken = "refresh_token";
         internal const string ExpiresAt = "expires_at";
         internal const string AccessToken = "access_token";
-        internal const string Scope = "openid profile email";
+        internal const string Scope = "openid profile email dvs";
         internal const string PullEndpoint = "/activate/pull";
         internal const string ActivateEndpoint = "/activate/user";
         internal const string GetIdentityInfoEndpoint = "/activate/check";

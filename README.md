@@ -145,6 +145,7 @@ Note that the redirect uri, if not explicitly specified in the `MiraclAuthentica
 You have to setup the mpad.js url in the Views/Home/Index.cshtml too as explained in the [Authorization Flow section](https://github.com/miracl/maas-sdk-dotnet-v2/#authorization-flow).
 
 * `MiraclAuthenticationApp` demonstrates the usage of `MiraclClient` to authenticate to the MIRACL server
+* `MiraclDvsSigningApp` demonstrates the [DVS flow](https://github.com/miracl/maas-sdk-dotnet-v2/#dvs-flow) described above
 * `MiraclIdentityVerificationApp` demonstrates the verification flows of an [identity registration](https://github.com/miracl/maas-sdk-dotnet-v2/#identity-registration-verification-flow) described above
 
 ## Sample Endpoints

@@ -1,4 +1,4 @@
-﻿using IdentityModel;
+using IdentityModel;
 using IdentityModel.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -237,7 +237,7 @@ namespace Miracl
             client.Timeout = this.Options.BackchannelTimeout;
             client.AuthenticationStyle = AuthenticationStyle.PostValues;
             this.accessTokenResponse = await client.RequestAuthorizationCodeAsync(code, redirectUri);
-            return IsIdentityTokenValid(userId) ? this.accessTokenResponse : null;
+            return await IsIdentityTokenValidAsync(userId) ? this.accessTokenResponse : null;
         }
 
         /// <summary>
@@ -375,7 +375,7 @@ namespace Miracl
         /// or
         /// Invalid response
         /// </exception>
-        public Identity HandleNewIdentityPush(string newUserJson)
+        public async Task<Identity> HandleNewIdentityPushAsync(string newUserJson)
         {
             var newUserToken = JObject.Parse(newUserJson).TryGetString("new_user_token");
             if (newUserToken == null)
@@ -383,7 +383,8 @@ namespace Miracl
                 throw new ArgumentException("No `new_user_token` in the JSON input.");
             }
 
-            var claims = ValidateToken(newUserToken, this.Options.CustomerId).Claims;
+            var principal = await ValidateTokenAsync(newUserToken, this.Options.CustomerId);
+            var claims = principal.Claims;
             var userData = claims.FirstOrDefault(c => c.Type.Equals("events"));
             if (userData == null)
             {
@@ -561,7 +562,7 @@ namespace Miracl
                                                     nonce: this.Nonce);
         }
 
-        private bool IsIdentityTokenValid(string userId)
+        private async Task<bool> IsIdentityTokenValidAsync(string userId)
         {
             bool isUserIdValid = true;
             if (!string.IsNullOrEmpty(userId) && this.accessTokenResponse.IdentityToken != null)
@@ -579,18 +580,18 @@ namespace Miracl
                 throw new ArgumentException("Invalid nonce!");
             }
 
-            this.idTokenClaims = ValidateToken(this.accessTokenResponse.IdentityToken, this.Options.ClientId);
+            this.idTokenClaims = await ValidateTokenAsync(this.accessTokenResponse.IdentityToken, this.Options.ClientId);
             return isUserIdValid;
         }
 
-        private ClaimsPrincipal ValidateToken(string token, string audience)
+        private async Task<ClaimsPrincipal> ValidateTokenAsync(string token, string audience)
         {
             string kid = GetKey(token);
 
             SecurityToken securityToken;
             var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
             var jwt = jwtSecurityTokenHandler.ReadToken(token) as JwtSecurityToken;
-            var rsaPublicKey = CreatePublicKey(kid);
+            var rsaPublicKey = await CreatePublicKeyAsync(kid);
 
             var prms = new TokenValidationParameters()
             {
@@ -624,9 +625,15 @@ namespace Miracl
             return headerData["kid"].ToString();
         }
 
-        private RSACryptoServiceProvider CreatePublicKey(string kid)
+        private async Task<RSACryptoServiceProvider> CreatePublicKeyAsync(string kid)
         {
             var cryptoProvider = new RSACryptoServiceProvider();
+
+            if (!doc.KeySet.Keys.Any(key => key.Kid == kid))
+            {
+                await UpdateDiscoveryConfigurationAsync();
+            }
+
             foreach (var key in doc.KeySet.Keys)
             {
                 if (key.Kty == "RSA" && key.Kid.Equals(kid))
@@ -640,6 +647,12 @@ namespace Miracl
             }
 
             return cryptoProvider;
+        }
+
+        private async Task UpdateDiscoveryConfigurationAsync()
+        {
+            var discoveryClient = GetDiscoveryClient(Constants.DiscoveryPath);
+            doc = await discoveryClient.GetAsync();
         }
 
         private bool IsNonceValid(string identityToken)
@@ -682,8 +695,7 @@ namespace Miracl
         {
             if (doc == null)
             {
-                var discoveryClient = GetDiscoveryClient(Constants.DiscoveryPath);
-                doc = await discoveryClient.GetAsync();
+                await UpdateDiscoveryConfigurationAsync();
             }
 
             if (dvsRsaPublicKey == null)

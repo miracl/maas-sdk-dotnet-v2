@@ -653,6 +653,27 @@ namespace MiraclAuthenticationTests
         }
 
         [Test]
+        public void Test_HandleNewIdentityPushAsync_MissingKey()
+        {
+            var client = InitClient();
+            SetDiscovery(client);
+            client.Options.CustomerId = ValidCustomerId;
+            // remove the key to reproduce key change in the platform
+            client.doc.KeySet.Keys.Remove(client.doc.KeySet.Keys.First(key => key.Kid == "31-07-2016"));
+
+            var identity = client.HandleNewIdentityPushAsync("{\"new_user_token\":\"" + NewUserToken + "\"}").Result;
+
+            Assert.That(identity, Is.Not.Null);
+            Assert.That(identity.Info, Is.Not.Null);
+            Assert.That(identity.Info.Id, Is.EqualTo("asd@example.com"));
+            Assert.That(identity.Info.DeviceName, Is.EqualTo("Chrome on Windows"));
+            Assert.That(identity.ActivationParams, Is.Not.Null);
+            Assert.That(identity.ActivationParams.MPinIdHash, Is.EqualTo("5931ed4363cbc73c88d6a173bde75546a78f2c16fbe90949a8ebc4e1b1db635f"));
+            Assert.That(identity.ActivationParams.ActivateKey, Is.EqualTo("29b9aea1dd8b42594bd8209e3f497dfa83818fdf8cdd027302f85d6ee7e2160f"));
+            Assert.That(identity.ActivateExpireTime, Is.EqualTo(1512640536));
+        }
+
+        [Test]
         public void Test_HandleNewIdentityPushAsync_NullJson()
         {
             var client = new MiraclClient();
@@ -1014,17 +1035,7 @@ namespace MiraclAuthenticationTests
 
         private void SetDiscovery(MiraclClient client)
         {
-            var discoFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "documents", "discovery.json");
-            var document = File.ReadAllText(discoFileName);
-
-            var jwksFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "documents", "discovery_jwks.json");
-            var jwks = File.ReadAllText(jwksFileName);
-
-            var _successHandler = new MockHttpMessageHandler();
-            _successHandler.When(Endpoint + "/.well-known/openid-configuration").Respond("application/json", document);
-            _successHandler.When(CertUri).Respond("application/json", jwks);
-
-            var discoveryClient = new DiscoveryClient(Endpoint, _successHandler);
+            var discoveryClient = new DiscoveryClient(Endpoint, GetDefaultMockHttp());
             discoveryClient.Policy = new DiscoveryPolicy { RequireHttps = false };
             client.doc = discoveryClient.GetAsync().Result;
 
@@ -1042,7 +1053,16 @@ namespace MiraclAuthenticationTests
 
         private MockHttpMessageHandler GetDefaultMockHttp()
         {
+            var discoFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "documents", "discovery.json");
+            var document = File.ReadAllText(discoFileName);
+
+            var jwksFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "documents", "discovery_jwks.json");
+            var jwks = File.ReadAllText(jwksFileName);
+
             var mockHttp = new MockHttpMessageHandler();
+
+            mockHttp.When(Endpoint + "/.well-known/openid-configuration").Respond("application/json", document);
+            mockHttp.When(CertUri).Respond("application/json", jwks);
             mockHttp.When(HttpMethod.Post, DvsVerifyEndpoint).Respond("application/json", "{\"certificate\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6InMxIn0.eyJjQXQiOjE0OTc0NDQ0NTEsImV4cCI6MTQ5NzQ0NDQ2MSwiaGFzaCI6IjE1NzYwNDczOTc5ZDIwMjdiZWJjYTIyZDRlMGFlNDBmNDlkMDc1NmRkYTUwN2RlNzFkZjk5YmYwNGQyYTdkMDcifQ.A19LAJpEZjFhwor0bj02AGh9Nu_VGtyNXeJhqSe1uWc16kJA3Mi7Oe5ocFRUbb5xRuQ8TkzL9kjjiE3CgHLFftCDswHQqLX6nIH6oamVd0lt3fbgAu3pJBtK9U2BKSxwT7q-pQNFuPJTs-3P8XAwegJAbUouHUKuKL1zJTnDmQk\"}");
             mockHttp.When(HttpMethod.Get, DvsPubKeysEndpoint).Respond("application/json", "{\"keys\": [{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"s1\",\"n\":\"kWp2zRA23Z3vTL4uoe8kTFptxBVFunIoP4t_8TDYJrOb7D1iZNDXVeEsYKp6ppmrTZDAgd-cNOTKLd4M39WJc5FN0maTAVKJc7NxklDeKc4dMe1BGvTZNG4MpWBo-taKULlYUu0ltYJuLzOjIrTHfarucrGoRWqM0sl3z2-fv9k\",\"e\":\"AQAB\"}]}");
             return mockHttp;

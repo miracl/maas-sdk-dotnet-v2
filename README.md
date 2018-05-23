@@ -147,6 +147,7 @@ You have to setup the mpad.js url in the Views/Home/Index.cshtml too as explaine
 * `MiraclAuthenticationApp` demonstrates the usage of `MiraclClient` to authenticate to the MIRACL server
 * `MiraclDvsSigningApp` demonstrates the [DVS flow](https://github.com/miracl/maas-sdk-dotnet-v2/#dvs-flow) described above
 * `MiraclIdentityVerificationApp` demonstrates the verification flows of an [identity registration](https://github.com/miracl/maas-sdk-dotnet-v2/#identity-registration-verification-flow) described above
+* `demo` is used for integration testing and is part of a separate solution (`Integration.sln`) and it is not supposed to be run manually
 
 ## Sample Endpoints
 The `MiraclAuthenticationApp` sample handles the following requests in order to serve as an authenticator for a mobile app:

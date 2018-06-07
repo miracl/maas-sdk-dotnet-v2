@@ -14,6 +14,11 @@ namespace demo
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
             routes.MapRoute(
+                "DVS verify signature",
+                "verify/",
+                new { controller = "dvs", action = "VerifySignature" });
+
+            routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }

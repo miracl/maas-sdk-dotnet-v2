@@ -1,5 +1,6 @@
 ﻿using Miracl;
 using Newtonsoft.Json.Linq;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -27,6 +28,19 @@ namespace demo.Controllers
             var verificationResult = await MvcApplication.Client.DvsVerifySignatureAsync(signature, timeStamp);
 
             return Json(new { valid = verificationResult.IsSignatureValid, status = verificationResult.Status.ToString() });
+        }
+
+        [HttpPost]
+        public JsonResult CreateDocumentHash()
+        {
+            string document = new StreamReader(Request.InputStream).ReadToEnd();
+
+            var docHash = MvcApplication.Client.DvsCreateDocumentHash(document);
+            var timeStamp = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+
+            var documentData = new { hash = docHash, timestamp = timeStamp };
+
+            return Json(documentData);
         }
     }
 }

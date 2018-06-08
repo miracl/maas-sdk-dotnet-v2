@@ -19,6 +19,11 @@ namespace demo
                 new { controller = "dvs", action = "VerifySignature" });
 
             routes.MapRoute(
+                "DVS create document hash",                                           
+                "hash/",                            
+                new { controller = "dvs", action = "CreateDocumentHash" });
+
+            routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }

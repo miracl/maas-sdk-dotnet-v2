@@ -41,7 +41,7 @@ build_script:
 test_script:
   - cmd: |
       %OPENCOVER_EXE% -target:nunit3-console.exe -targetargs:".\MiraclAuthenticationTests\bin\Release\MiraclAuthenticationTests.dll" -filter:"%COVERAGE_FILTER%" -register:user -returntargetcode -output:%COVERAGE_DIR%\coverage.xml
-      %COVERALLS_NET_EXE% --opencover -i %COVERAGE_DIR%\coverage.xml --serviceName appveyor --useRelativePaths
+      %COVERALLS_NET_EXE% --opencover -i %COVERAGE_DIR%\coverage.xml --serviceName appveyor --useRelativePaths --jobId %APPVEYOR_BUILD_NUMBER%
   - ps: |
       git clone -q https://github.com/miracl/maas-sdk-integration.git
       docker build -f demo/Dockerfile -t demo .

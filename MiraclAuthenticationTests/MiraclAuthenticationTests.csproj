@@ -105,7 +105,6 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
-    <Compile Include="DvsIntegrationTests.cs" />
     <Compile Include="MiraclClientTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -128,7 +127,6 @@
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup />
   <Choose>

@@ -1,6 +1,6 @@
 # maas-sdk-dotnet-v2
 
-[![Build status](https://ci.appveyor.com/api/projects/status/5223lully3vwgmxe/branch/master?svg=true)](https://ci.appveyor.com/project/Miracl/maas-sdk-dotnet-v2/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/5223lully3vwgmxe/branch/appveyor?svg=true)](https://ci.appveyor.com/project/Miracl/maas-sdk-dotnet-v2/branch/appveyor)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/5223lully3vwgmxe?svg=true)](https://ci.appveyor.com/project/Miracl/maas-sdk-dotnet-v2)
 

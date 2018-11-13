@@ -153,6 +153,57 @@ namespace Miracl
         }
 
         /// <summary>
+        /// Gets an activation token from the provided user id and device name and constructs the authorization url for user activation to redirect to.
+        /// </summary>
+        /// <param name="userId">The user identifier, e.g. an email address.</param>
+        /// <param name="deviceName">Name of the device.</param>
+        /// <param name="baseUri">The base URI of the calling app.</param>
+        /// <param name="options">(Optional) The options for authentication.</param>
+        /// <param name="stateString">(Optional) Specify a new Open ID Connect state.</param>
+        /// <returns>The callback url</returns>
+        /// <exception cref="ArgumentNullException">userId</exception>
+        /// <exception cref="Exception">Cannot generate a user from the server response.</exception>
+        public async Task<string> GetRPInitiatedAuthUriAsync(string userId, string deviceName, string baseUri, MiraclAuthenticationOptions options = null, string stateString = null)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentNullException(nameof(userId));
+            }
+
+            // need to get the authorization uri first so it initializes the discovery and validate values
+            string authUrl = await GetAuthorizationRequestUrlAsync(baseUri, options, stateString);
+
+            var httpClient = this.Options.BackchannelHttpHandler != null
+               ? new HttpClient(this.Options.BackchannelHttpHandler)
+               : new HttpClient();
+
+            var postData = JsonConvert.SerializeObject(new { userId = userId, deviceName = deviceName });
+            var content = new StringContent(postData, Encoding.UTF8, "application/json");
+            httpClient.SetBasicAuthentication(this.Options.ClientId, this.Options.ClientSecret);
+
+            var baseAddr = GetBaseAddress() + Constants.ActivateInitiateEndpoint;
+            var response = await httpClient.PostAsync(baseAddr, content);
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new Exception(string.Format("Connection problem with the Platform at `{0}`, status: {1}.", baseAddr, response.StatusCode));
+            }
+
+            string actToken;
+            try
+            {
+                var respContent = await response.Content.ReadAsStringAsync();
+                actToken = JObject.Parse(respContent).TryGetValue("actToken", out JToken value) ? value.ToString() : null;
+            }
+            catch
+            {
+                throw new Exception("Cannot generate an activation token from the server response.");
+            }
+
+            return string.Format("{0}&prerollid={1}&acttoken={2}", authUrl, userId, actToken);
+        }
+
+        /// <summary>
         /// Returns response with the access token if validation succeeds or None if query string
         /// doesn't contain code and state.
         /// </summary>

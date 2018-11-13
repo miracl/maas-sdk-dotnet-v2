@@ -17,7 +17,8 @@ namespace MiraclIdentityVerificationApp.Controllers
         StandardEmail,
         CustomEmail,
         FullCustomPull,
-        FullCustomPush
+        FullCustomPush,
+        FullCustomRPInitiated
     }
 
     public class HomeController : Controller
@@ -26,13 +27,14 @@ namespace MiraclIdentityVerificationApp.Controllers
         private static MiraclClient CustomEmailClient;
         private static MiraclClient FullCustomPushClient;
         private static MiraclClient FullCustomPullClient;
+        private static MiraclClient FullCustomRPInitiatedClient;
+        private static UserVerificationMethod ClientMethod;
         internal static MiraclClient Client;
 
         #region Actions
-        public async Task<ActionResult> Index()
+        public ActionResult Index()
         {
-            ViewBag.AuthorizationUri = await GetUrl(GetAbsoluteRequestUrl(), UserVerificationMethod.StandardEmail);
-            ViewBag.VerificationFlow = UserVerificationMethod.StandardEmail.ToString();
+            SetupUserVerificationMethod(UserVerificationMethod.StandardEmail);
             return View();
         }
 
@@ -43,10 +45,9 @@ namespace MiraclIdentityVerificationApp.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<ActionResult> CustomEmail()
+        public ActionResult CustomEmail()
         {
-            ViewBag.AuthorizationUri = await GetUrl(GetAbsoluteRequestUrl(), UserVerificationMethod.CustomEmail);
-            ViewBag.VerificationFlow = UserVerificationMethod.CustomEmail.ToString();
+            SetupUserVerificationMethod(UserVerificationMethod.CustomEmail);
             return View("Index");
         }
 
@@ -57,10 +58,9 @@ namespace MiraclIdentityVerificationApp.Controllers
             return RedirectToAction("CustomEmail");
         }
 
-        public async Task<ActionResult> FullCustomPush()
+        public ActionResult FullCustomPush()
         {
-            ViewBag.AuthorizationUri = await GetUrl(GetAbsoluteRequestUrl(), UserVerificationMethod.FullCustomPush);
-            ViewBag.VerificationFlow = UserVerificationMethod.FullCustomPush.ToString();
+            SetupUserVerificationMethod(UserVerificationMethod.FullCustomPush);
             return View("Index");
         }
 
@@ -71,10 +71,9 @@ namespace MiraclIdentityVerificationApp.Controllers
             return RedirectToAction("FullCustomPush");
         }
 
-        public async Task<ActionResult> FullCustomPull()
+        public ActionResult FullCustomPull()
         {
-            ViewBag.AuthorizationUri = await GetUrl(GetAbsoluteRequestUrl(), UserVerificationMethod.FullCustomPull);
-            ViewBag.VerificationFlow = UserVerificationMethod.FullCustomPull.ToString();
+            SetupUserVerificationMethod(UserVerificationMethod.FullCustomPull);
             return View("Index");
         }
 
@@ -85,17 +84,68 @@ namespace MiraclIdentityVerificationApp.Controllers
             return RedirectToAction("FullCustomPull");
         }
 
+        public ActionResult FullCustomRPInitiated()
+        {
+            SetupUserVerificationMethod(UserVerificationMethod.FullCustomRPInitiated);
+            return View("Index");
+        }
+
+        [HttpPost]
+        public ActionResult FullCustomRPInitiated(string data)
+        {
+            Logout();
+            return RedirectToAction("FullCustomPull");
+        }
+
+        public async Task<ActionResult> Login(string identity)
+        {
+            if (ClientMethod == UserVerificationMethod.FullCustomRPInitiated)
+            {
+                if (string.IsNullOrEmpty(identity))
+                {
+                    ViewBag.ErrorMsg = "You need to enter an email which you want to start the custom RP initiated authentication with.";
+                    return View("Error");
+                }
+                // here the app could validate the identity and then proceed with its activation and registration
+                string device = System.Net.Dns.GetHostName();
+                string authUri = await GetClient(UserVerificationMethod.FullCustomRPInitiated).GetRPInitiatedAuthUriAsync(identity, device, GetAbsoluteRequestUrl());
+                return Redirect(authUri);
+            }
+
+            var authorizationUri = await GetUrl(GetAbsoluteRequestUrl(), ClientMethod, identity);
+            return Redirect(authorizationUri);
+        }
+
+        public async Task<ActionResult> Logout(string data)
+        {
+            Logout();
+            return View("Index");
+        }
+
         #endregion
 
         #region Methods
-        private static async Task<string> GetUrl(string url, UserVerificationMethod method)
+
+        private void SetupUserVerificationMethod(UserVerificationMethod method)
         {
-            return await GetClient(method).GetAuthorizationRequestUrlAsync(url);
+            ClientMethod = method;
+            ViewBag.VerificationFlow = method.ToString();
         }
 
+        private static async Task<string> GetUrl(string url, UserVerificationMethod method, string identity = null)
+        {
+            var authorizationUri = await GetClient(method).GetAuthorizationRequestUrlAsync(url);
+            // The following code is used to populate prerollid if provided during the authentication process
+            if (!string.IsNullOrEmpty(identity))
+            {
+                authorizationUri += "&prerollid=" + identity;
+            }
+            return authorizationUri;
+        }
+        
         private string GetAbsoluteRequestUrl()
         {
-            return Request.Url.Segments.Count() > 1 
+            return Request.Url.Segments.Count() > 1
                     ? Request.Url.AbsoluteUri.Replace(Request.Url.AbsolutePath, "")
                     : Request.Url.AbsoluteUri;
         }
@@ -127,7 +177,7 @@ namespace MiraclIdentityVerificationApp.Controllers
                         });
                     }
                     Client = CustomEmailClient;
-                    break;  
+                    break;
                 case UserVerificationMethod.FullCustomPush:
                     if (FullCustomPushClient == null)
                     {
@@ -154,6 +204,18 @@ namespace MiraclIdentityVerificationApp.Controllers
                     }
                     Client = FullCustomPullClient;
                     break;
+                case UserVerificationMethod.FullCustomRPInitiated:
+                    if (FullCustomRPInitiatedClient == null)
+                    {
+                        FullCustomRPInitiatedClient = new MiraclClient(new MiraclAuthenticationOptions
+                        {
+                            ClientId = ConfigurationManager.AppSettings["FullCustomRPInitiatedClientId"],
+                            ClientSecret = ConfigurationManager.AppSettings["FullCustomRPInitiatedClientSecret"],
+                            AuthenticationType = "Cookies"
+                        });
+                    }
+                    Client = FullCustomRPInitiatedClient;
+                    break;
             }
 
             return Client;
@@ -161,15 +223,13 @@ namespace MiraclIdentityVerificationApp.Controllers
 
         private void Logout()
         {
-            if (Request.Form["Logout"] == "Logout")
-            {
-                StandardEmailClient?.ClearUserInfo(false);
-                CustomEmailClient?.ClearUserInfo(false);
-                FullCustomPushClient?.ClearUserInfo(false);
-                FullCustomPullClient?.ClearUserInfo(false);
-                Request.GetOwinContext().Authentication.SignOut();
-            }
-        }        
+            StandardEmailClient?.ClearUserInfo(false);
+            CustomEmailClient?.ClearUserInfo(false);
+            FullCustomPushClient?.ClearUserInfo(false);
+            FullCustomPullClient?.ClearUserInfo(false);
+            FullCustomRPInitiatedClient?.ClearUserInfo(false);
+            Request.GetOwinContext().Authentication.SignOut();
+        }
         #endregion
     }
 }

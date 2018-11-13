@@ -27,6 +27,7 @@ namespace MiraclAuthenticationTests
         private const string AuthorizeEndpoint = "https://api.dev.miracl.net/authorize";
         private const string DvsVerifyEndpoint = Endpoint + Constants.DvsVerifyString;
         private const string DvsPubKeysEndpoint = Endpoint + Constants.DvsPublicKeyString;
+        private const string RPInitiatedEndpoint = Endpoint + Constants.ActivateInitiateEndpoint;
         private const string CertUri = "https://api.dev.miracl.net/oidc/certs";
         private const string ValidClientId = "gnuei07bcyee8";
         private const string ValidAccessToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjMxLTA3LTIwMTYifQ.eyJjaWQiOiJnbnVlaTA3YmN5ZWU4IiwiZXhwIjoxNDkzMDE2NDk5LCJpc3MiOiJodHRwczovL2FwaS5kZXYubWlyYWNsLm5ldCIsInNjcCI6WyJvcGVuaWQiLCJwcm9maWxlIiwiZW1haWwiXSwic3ViIjoicGV0eWEua29sZXZhQG1pcmFjbC5jb20ifQ.MKPhkQ6-QbPIuD68cfy6QmuqelFUs1yUmW2dZn3ovjC8BkdCdgzRzysAvdTQCGe8F-WRTIAdmY00rXmC-z4_VVG1yESdOP2eCOD7zFmIXF9m5OTKMJJEaG6SOUoko5jypohmDk4MuLjOvfMOhXQfWKqLxkliMmM2e8J1FjSY7sF6Azg0Pq_mqK-mznIofbzR7tnA22XmlF_GRqYyoRpUEtkzU2ydoU9oGSJrwtwTeN1vXlzEwSvj65mVkuP4dIqJ5fmYstgTyKlzkwe8wFDHhB3Px-89lh5JRYKoY0nbDIUOc0RA0dKFnnFX3P0Cp9kp2QOwXYdRLmdhvhn7IeJjjw";
@@ -95,6 +96,49 @@ namespace MiraclAuthenticationTests
             Assert.That(() => client.GetAuthorizationRequestUrlAsync(AuthorizeEndpoint),
                 Throws.TypeOf<Exception>().And.Message.Contains("Unable to read the discovery data."));
         }
+        #endregion
+
+        #region GetRPInitiatedAuthUriAsync
+        [Test]
+        public void Test_GetRPInitiatedAuthUriAsync()
+        {
+            var client = InitClient();
+            var url = client.GetRPInitiatedAuthUriAsync("userId", string.Empty, Endpoint, client.Options).Result;
+
+            Assert.That(url, Is.Not.Null);
+            Assert.That(client, Has.Property("State").Not.Null);
+            Assert.That(client, Has.Property("Nonce").Not.Null);
+        }
+
+        [Test]
+        public void Test_GetRPInitiatedAuthUriAsync_EmptyUserId()
+        {
+            var client = new MiraclClient();
+            Assert.That(() => client.GetRPInitiatedAuthUriAsync("", "", ""),
+                Throws.TypeOf<ArgumentNullException>().And.Property("ParamName").EqualTo("userId"));
+        }
+
+        [Test]
+        public void Test_GetRPInitiatedAuthUriAsync_NoPlatformConnection()
+        {
+            var mockHttp = GetDefaultMockHttp(false);
+            var client = InitClient("MockClient", "MockSecret", mockHttp);
+
+            Assert.That(() => client.GetRPInitiatedAuthUriAsync("userid", "", Endpoint),
+                Throws.TypeOf<Exception>().And.Message.Contains("Connection problem with the Platform at "));
+        }
+             
+        [Test]
+        public void Test_GetRPInitiatedAuthUriAsync_InvalidPlatfromResponse()
+        {
+            var mockHttp = GetDefaultMockHttp(false);
+            mockHttp.When(HttpMethod.Post, RPInitiatedEndpoint).Respond("application/json", "not a json structure");
+            var client = InitClient("MockClient", "MockSecret", mockHttp);
+
+            Assert.That(() => client.GetRPInitiatedAuthUriAsync("userid", "", Endpoint),
+                Throws.TypeOf<Exception>().And.Message.Contains("Cannot generate an activation token from the server response."));
+        }
+
         #endregion
 
         #region ValidateAuthorizationAsync
@@ -444,7 +488,7 @@ namespace MiraclAuthenticationTests
             Assert.That(() => client.GetAuthorizationRequestUrlAsync(Endpoint),
                                Throws.TypeOf<ArgumentException>().And.Message.Contains("Cannot read public key"));
         }
-        
+
         [TestCase("", "s", "d", "d", "b", null)]
         [TestCase(null, "s", "d", "d", "b", "")]
         [TestCase("2", "", "d", "d", "b", "1")]
@@ -985,10 +1029,10 @@ namespace MiraclAuthenticationTests
         public void Test_Identity_IsEmpty(string id, string deviceName, string mPinIdHash, string activateKey, Int64 activateExpireTime)
         {
             var identity = new Miracl.Identity(id, deviceName, mPinIdHash, activateKey, activateExpireTime);
-            
+
             Assert.IsTrue(identity.IsEmpty());
         }
-        
+
         [Test]
         public void Test_Identity_IsExpired()
         {
@@ -1014,7 +1058,7 @@ namespace MiraclAuthenticationTests
             Assert.That(identity.ActivationParams.ActivateKey, Is.EqualTo("key"));
             Assert.That(identity.ActivateExpireTime, Is.EqualTo(1));
         }
-        
+
         [TestCase("{\"newUser\":{}}")]
         [TestCase("{\"newUser\":{\"deviceName\":\"Chrome on Windows\",\"hashMPinID\":\"5931ed4363cbc73c88d6a173bde75546a78f2c16fbe90949a8ebc4e1b1db635f\",\"activateKey\":\"29b9aea1dd8b42594bd8209e3f497dfa83818fdf8cdd027302f85d6ee7e2160f\",\"expireTime\":1512640536}}")]
         [TestCase("{\"newUser\":{\"userID\":\"asd@example.com\",\"hashMPinID\":\"5931ed4363cbc73c88d6a173bde75546a78f2c16fbe90949a8ebc4e1b1db635f\",\"activateKey\":\"29b9aea1dd8b42594bd8209e3f497dfa83818fdf8cdd027302f85d6ee7e2160f\",\"expireTime\":1512640536}}")]
@@ -1050,7 +1094,7 @@ namespace MiraclAuthenticationTests
             var client = new MiraclClient();
             var activationParams = client.ParseCustomEmailQueryString(queryString);
 
-            Assert.IsNotNull(activationParams);            
+            Assert.IsNotNull(activationParams);
             Assert.That(activationParams.MPinIdHash, Is.EqualTo("MockMPinIdHash"));
             Assert.That(activationParams.ActivateKey, Is.EqualTo("MockActivateKey"));
         }
@@ -1109,7 +1153,7 @@ namespace MiraclAuthenticationTests
             client.dvsRsaPublicKey = new System.Security.Cryptography.RSACryptoServiceProvider();
         }
 
-        private MockHttpMessageHandler GetDefaultMockHttp()
+        private MockHttpMessageHandler GetDefaultMockHttp(bool addRPInidiatedEndpoint = true)
         {
             var discoFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "documents", "discovery.json");
             var document = File.ReadAllText(discoFileName);
@@ -1123,6 +1167,10 @@ namespace MiraclAuthenticationTests
             mockHttp.When(CertUri).Respond("application/json", jwks);
             mockHttp.When(HttpMethod.Post, DvsVerifyEndpoint).Respond("application/json", "{\"certificate\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6InMxIn0.eyJjQXQiOjE0OTc0NDQ0NTEsImV4cCI6MTQ5NzQ0NDQ2MSwiaGFzaCI6IjE1NzYwNDczOTc5ZDIwMjdiZWJjYTIyZDRlMGFlNDBmNDlkMDc1NmRkYTUwN2RlNzFkZjk5YmYwNGQyYTdkMDcifQ.A19LAJpEZjFhwor0bj02AGh9Nu_VGtyNXeJhqSe1uWc16kJA3Mi7Oe5ocFRUbb5xRuQ8TkzL9kjjiE3CgHLFftCDswHQqLX6nIH6oamVd0lt3fbgAu3pJBtK9U2BKSxwT7q-pQNFuPJTs-3P8XAwegJAbUouHUKuKL1zJTnDmQk\"}");
             mockHttp.When(HttpMethod.Get, DvsPubKeysEndpoint).Respond("application/json", "{\"keys\": [{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"s1\",\"n\":\"kWp2zRA23Z3vTL4uoe8kTFptxBVFunIoP4t_8TDYJrOb7D1iZNDXVeEsYKp6ppmrTZDAgd-cNOTKLd4M39WJc5FN0maTAVKJc7NxklDeKc4dMe1BGvTZNG4MpWBo-taKULlYUu0ltYJuLzOjIrTHfarucrGoRWqM0sl3z2-fv9k\",\"e\":\"AQAB\"}]}");
+            if (addRPInidiatedEndpoint)
+            {
+                mockHttp.When(HttpMethod.Post, RPInitiatedEndpoint).Respond("application/json", "{\"mpinId\":\"7b22696174223a313534313636323732352c22757365724944223a2270657479612e6b6f6c657661406d697261636c2e636f6d222c22634944223a2263313431623638342d643130342d346236312d626466392d663530316265303734333836222c2273616c74223a2275733739437647584f5254444f7272355441544b3677222c2276223a352c2273636f7065223a5b2261757468225d2c22647461223a5b5d2c227674223a227076227d\",\"hashMPinId\":\"7167bc0f576dd6db3afb868370c941d41388f68a86426e377fe16a747532fddd\",\"actToken\":\"5ab9551721a45d778ac77d3da1ca1317\",\"expireTime\":1541662815}");
+            }
             return mockHttp;
         }
 

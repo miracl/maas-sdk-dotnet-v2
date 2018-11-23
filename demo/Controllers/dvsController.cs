@@ -23,8 +23,10 @@ namespace demo.Controllers
             var v = sign.Value<string>("v");
             var docHash = sign.Value<string>("hash");
             var timeStamp = data.Value<int?>("timestamp") ?? 0;
+            JToken dtasValue;
+            var dtas = data.TryGetValue("dtas", out dtasValue) ? dtasValue.ToString() : null;
 
-            var signature = new Signature(docHash, mPinId, u, v, publicKey);
+            var signature = new Signature(docHash, mPinId, u, v, publicKey, dtas);
             var verificationResult = await MvcApplication.Client.DvsVerifySignatureAsync(signature, timeStamp);
 
             return Json(new { valid = verificationResult.IsSignatureValid, status = verificationResult.Status.ToString() });

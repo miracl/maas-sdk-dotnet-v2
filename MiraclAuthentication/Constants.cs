@@ -18,6 +18,7 @@ namespace Miracl
         internal const string PullEndpoint = "/activate/pull";
         internal const string ActivateEndpoint = "/activate/user";
         internal const string GetIdentityInfoEndpoint = "/activate/check";
+        internal const string ActivateInitiateEndpoint = "/activate/initiate";
         internal const string UserIdClaim = "sub";
         internal const string EmailClaim = "email";
     }

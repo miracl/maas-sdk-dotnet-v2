@@ -11,15 +11,32 @@ using System.Web.UI;
 
 namespace SampleWebApp.Controllers
 {
-
     public class HomeController : Controller
     {
         internal static MiraclClient Client;
 
-        public async Task<ActionResult> Index()
+        public ActionResult Index()
         {
-            ViewBag.AuthorizationUri = await GetUrl(Request.Url.ToString());
             return View();
+        }
+
+        public async Task<ActionResult> Login(string email)
+        {
+            var url = Request.Url.Scheme + "://" + Request.Url.Authority;
+            var authorizationUri = await GetUrl(url);
+            // The following code is used to populate prerollid if provided during the authentication process
+            if (!string.IsNullOrEmpty(email))
+            {
+                authorizationUri += "&prerollid=" + email;
+            }
+            return Redirect(authorizationUri);
+        }
+
+        public ActionResult Logout()
+        {
+            Client?.ClearUserInfo(false);
+            Request.GetOwinContext().Authentication.SignOut();
+            return RedirectToAction("Index");
         }
 
         internal static async Task<string> GetUrl(string url)
@@ -36,18 +53,7 @@ namespace SampleWebApp.Controllers
 
             return await Client.GetAuthorizationRequestUrlAsync(url);
         }
-        
-        [HttpPost]
-        public ActionResult Index(string Logout)
-        {
-            if (Logout != null)
-            {
-                Client.ClearUserInfo(false);
-                Request.GetOwinContext().Authentication.SignOut();
-            }
 
-            return RedirectToAction("Index");
-        }
     }
 }
 

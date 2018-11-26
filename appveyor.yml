@@ -11,7 +11,7 @@ environment:
   OPENCOVER_EXE: '%COVERAGE_DIR%\OpenCover.%OPENCOVER_VER%\tools\OpenCover.Console.exe'
   COVERALLS_NET_EXE: '%COVERAGE_DIR%\coveralls.net.%COVERALLS_NET_VER%\tools\csmacnz.Coveralls.exe'
   COVERALLS_REPO_TOKEN:
-    secure: cxFGnbuMOzKyckaNH2NOUKY0JTPeyEHWTffh7PifFsDuLSnFS17HSKgHuUUtynNy
+    secure: QyuBtbDw4AphFDBkt4lqnp+CDFk8//Ehju7Lrc+2uN/lDre6lVzbFY5twYwvqVOc
   MFA_CLIENT_SECRET:
     secure: wA4diTt4R8MV83KvKB3yKstc0tSwqDj4GkgGLel0mD5RgLiki3AHGuphsij7DPSM
   MFA_CLIENT_ID:

@@ -55,16 +55,17 @@ namespace MiraclDvsSigningApp.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> VerifySignature(string verificationData)
+        public async Task<JsonResult> VerifySignature(string verificationData, string documentData)
         {
+            var docData = JObject.Parse(documentData);
+            var ts = docData.TryGetInt("timestamp");
+            
             var data = JObject.Parse(verificationData);
-
             var mPinId = data.TryGetString("mpinId");
             var publicKey = data.TryGetString("publicKey");
             var u = data.TryGetString("u");
             var v = data.TryGetString("v");
             var docHash = data.TryGetString("hash");
-            var ts = data.TryGetInt("timestamp");
             JToken dtasValue;
             var dtas = data.TryGetValue("dtas", out dtasValue) ? dtasValue.ToString() : null;
 

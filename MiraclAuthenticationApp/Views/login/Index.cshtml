@@ -6,8 +6,12 @@
 <h2>Logged in session</h2>
 
 <br />
-<div >
-    Hi, <b>@ViewBag.Client.UserId</b> !
+<div>
+    Hi, <b>@ViewBag.Client.UserId</b> ! <br />
+    You've been authenticated with the following <b>MPinID</b>:
+    <pre>@ViewBag.Client.MPinID</pre>
+    and <b>HashMPinID: </b>
+    <pre>@ViewBag.Client.HashMPinID</pre>
 </div>
 
 <br />

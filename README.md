@@ -70,8 +70,8 @@ To complete the authorization the query of the received request should be passed
 
 ### Status check and user data
 
-To check if the user has token use `client.IsAuthorized()`. If so, `client.UserId` and `client.Email` will return additional user data after `client.GetIdentityAsync(tokenResponse)` is executed which itself returns the claims-based identity for granting a user to be signed in.
-If `null` is returned, the user is not authenticated or the token is expired and client needs to be authorized once more to access required data.
+To check if the user has a token use `client.IsAuthorized()`. If so, `client.UserId`, `client.Email`, `client.MPinID` and `client.HashMPinID` will return additional user data after `client.GetIdentityAsync(tokenResponse)` is executed which itself returns the claims-based identity for granting a user to be signed in.
+If `null` is returned, the user is not authenticated and client needs to be authorized once more to access the required data.
 
 Use `client.ClearUserInfo(false)` to drop user identity data.
 

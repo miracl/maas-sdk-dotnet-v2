@@ -33,7 +33,7 @@ namespace Miracl
         private ClaimsPrincipal idTokenClaims;
         // There could be more than one auth started at a time with the same client, 
         // so save the auth data on auth start and delete it when auth happens 
-        internal Dictionary<string, string> AuthData = new Dictionary<string, string>(); 
+        internal Dictionary<string, string> AuthData = new Dictionary<string, string>();
         #endregion
 
         #region C'tor
@@ -117,6 +117,34 @@ namespace Miracl
             get
             {
                 return TryGetUserInfoValue(Constants.EmailClaim);
+            }
+        }
+
+        /// <summary>
+        /// Gets the MPin ID of the authentication.
+        /// </summary>
+        /// <value>
+        /// The MPin ID.
+        /// </value>
+        public string MPinID
+        {
+            get
+            {
+                return this.accessTokenResponse == null ? string.Empty : GetClaim(this.accessTokenResponse.IdentityToken, Constants.MPinIDClaim);
+            }
+        }
+
+        /// <summary>
+        /// Gets the Hash MPin ID of the authentication.
+        /// </summary>
+        /// <value>
+        /// The Hash MPin ID.
+        /// </value>
+        public string HashMPinID
+        {
+            get
+            {
+                return this.accessTokenResponse == null ? string.Empty : GetClaim(this.accessTokenResponse.IdentityToken, Constants.HashMPinIDClaim);
             }
         }
         #endregion
@@ -248,7 +276,7 @@ namespace Miracl
 
             if (!this.AuthData.Keys.Any(k => k.Equals(returnedState, StringComparison.Ordinal)))
             {
-                throw new ArgumentException("Invalid state!");            
+                throw new ArgumentException("Invalid state!");
             }
 
             this.State = returnedState;
@@ -556,7 +584,7 @@ namespace Miracl
             {
                 return HttpStatusCode.InternalServerError;
             }
-            
+
             return HttpStatusCode.OK;
         }
 
@@ -653,7 +681,7 @@ namespace Miracl
             bool isUserIdValid = true;
             if (!string.IsNullOrEmpty(userId) && this.accessTokenResponse.IdentityToken != null)
             {
-                isUserIdValid = userId == GetUserId(this.accessTokenResponse.IdentityToken);
+                isUserIdValid = userId == GetClaim(this.accessTokenResponse.IdentityToken, Constants.UserIdClaim);
             }
 
             if (this.accessTokenResponse == null || string.IsNullOrEmpty(this.accessTokenResponse.IdentityToken))
@@ -753,7 +781,7 @@ namespace Miracl
             return nonce.ToString().Equals(this.Nonce);
         }
 
-        private string GetUserId(string identityToken)
+        private string GetClaim(string identityToken, string claimName)
         {
             if (string.IsNullOrEmpty(identityToken))
             {
@@ -761,7 +789,7 @@ namespace Miracl
             }
 
             var idToken = ParseJwt(identityToken);
-            var id = idToken.GetValue(Constants.UserIdClaim);
+            var id = idToken.GetValue(claimName);
             return id == null ? string.Empty : id.ToString();
         }
 
@@ -982,7 +1010,7 @@ namespace Miracl
             {
                 return string.Empty;
             }
-            
+
             return d.Value.ToString();
         }
 
@@ -1000,9 +1028,18 @@ namespace Miracl
             this.claims.Add(new Claim(Constants.AccessToken, response.AccessToken));
             this.claims.Add(new Claim(Constants.ExpiresAt, (DateTime.UtcNow.ToEpochTime() + response.ExpiresIn).ToDateTimeFromEpoch().ToString()));
 
-            if (!string.IsNullOrWhiteSpace(response.RefreshToken))
+            var mpinId = GetClaim(response.IdentityToken, Constants.MPinIDClaim);
+            AddClaimFor(this.claims, Constants.MPinIDClaim, mpinId);
+            var hashMPinId = GetClaim(response.IdentityToken, Constants.HashMPinIDClaim);
+            AddClaimFor(this.claims, Constants.HashMPinIDClaim, hashMPinId);
+            AddClaimFor(this.claims, Constants.RefreshToken, response.RefreshToken);
+        }
+
+        private void AddClaimFor(IEnumerable<Claim> cs, string claimType, string claimValue)
+        {
+            if (!string.IsNullOrEmpty(claimValue))
             {
-                this.claims.Add(new Claim(Constants.RefreshToken, response.RefreshToken));
+                this.claims.Add(new Claim(claimType, claimValue));
             }
         }
 

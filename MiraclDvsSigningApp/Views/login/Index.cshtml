@@ -28,7 +28,6 @@
             <br />
             <strong>Signature:</strong>
             <pre id="signatureData"></pre>
-            <a class="btn btn-primary" onclick="dvsVerifySignature($('#signatureData').html())">Verify signature</a>
         </div>
         <br />
         <div id="verificationResult" class="hidden">
@@ -124,7 +123,6 @@
                         console.info("Successful signature:");
                         $("#signatureData").html(JSON.stringify(signature, null, 4));
                         $("#signature").removeClass("hidden");
-                        
                         dvsVerifySignature(signature, documentData);
                     }, function fail(error) {
                         console.error(error);

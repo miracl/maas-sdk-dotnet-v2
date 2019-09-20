@@ -15,18 +15,12 @@ namespace MiraclIdentityVerificationApp.Controllers
     public enum UserVerificationMethod
     {
         StandardEmail,
-        CustomEmail,
-        FullCustomPull,
-        FullCustomPush,
         FullCustomRPInitiated
     }
 
     public class HomeController : Controller
     {
         private static MiraclClient StandardEmailClient;
-        private static MiraclClient CustomEmailClient;
-        private static MiraclClient FullCustomPushClient;
-        private static MiraclClient FullCustomPullClient;
         private static MiraclClient FullCustomRPInitiatedClient;
         private static UserVerificationMethod ClientMethod;
         internal static MiraclClient Client;
@@ -43,45 +37,6 @@ namespace MiraclIdentityVerificationApp.Controllers
         {
             Logout();
             return RedirectToAction("Index");
-        }
-
-        public ActionResult CustomEmail()
-        {
-            SetupUserVerificationMethod(UserVerificationMethod.CustomEmail);
-            return View("Index");
-        }
-
-        [HttpPost]
-        public ActionResult CustomEmail(string data)
-        {
-            Logout();
-            return RedirectToAction("CustomEmail");
-        }
-
-        public ActionResult FullCustomPush()
-        {
-            SetupUserVerificationMethod(UserVerificationMethod.FullCustomPush);
-            return View("Index");
-        }
-
-        [HttpPost]
-        public ActionResult FullCustomPush(string data)
-        {
-            Logout();
-            return RedirectToAction("FullCustomPush");
-        }
-
-        public ActionResult FullCustomPull()
-        {
-            SetupUserVerificationMethod(UserVerificationMethod.FullCustomPull);
-            return View("Index");
-        }
-
-        [HttpPost]
-        public ActionResult FullCustomPull(string data)
-        {
-            Logout();
-            return RedirectToAction("FullCustomPull");
         }
 
         public ActionResult FullCustomRPInitiated()
@@ -166,44 +121,6 @@ namespace MiraclIdentityVerificationApp.Controllers
                     }
                     Client = StandardEmailClient;
                     break;
-                case UserVerificationMethod.CustomEmail:
-                    if (CustomEmailClient == null)
-                    {
-                        CustomEmailClient = new MiraclClient(new MiraclAuthenticationOptions
-                        {
-                            ClientId = ConfigurationManager.AppSettings["CustomEmailClientId"],
-                            ClientSecret = ConfigurationManager.AppSettings["CustomEmailClientSecret"],
-                            AuthenticationType = "Cookies"
-                        });
-                    }
-                    Client = CustomEmailClient;
-                    break;
-                case UserVerificationMethod.FullCustomPush:
-                    if (FullCustomPushClient == null)
-                    {
-                        // Note that in this flow we need a CustomerId too as the identity registration token is signed with it
-                        FullCustomPushClient = new MiraclClient(new MiraclAuthenticationOptions
-                        {
-                            ClientId = ConfigurationManager.AppSettings["FullCustomPushClientId"],
-                            ClientSecret = ConfigurationManager.AppSettings["FullCustomPushClientSecret"],
-                            CustomerId = ConfigurationManager.AppSettings["FullCustomPushCustomerId"],
-                            AuthenticationType = "Cookies"
-                        });
-                    }
-                    Client = FullCustomPushClient;
-                    break;
-                case UserVerificationMethod.FullCustomPull:
-                    if (FullCustomPullClient == null)
-                    {
-                        FullCustomPullClient = new MiraclClient(new MiraclAuthenticationOptions
-                        {
-                            ClientId = ConfigurationManager.AppSettings["FullCustomPullClientId"],
-                            ClientSecret = ConfigurationManager.AppSettings["FullCustomPullClientSecret"],
-                            AuthenticationType = "Cookies"
-                        });
-                    }
-                    Client = FullCustomPullClient;
-                    break;
                 case UserVerificationMethod.FullCustomRPInitiated:
                     if (FullCustomRPInitiatedClient == null)
                     {
@@ -224,9 +141,6 @@ namespace MiraclIdentityVerificationApp.Controllers
         private void Logout()
         {
             StandardEmailClient?.ClearUserInfo(false);
-            CustomEmailClient?.ClearUserInfo(false);
-            FullCustomPushClient?.ClearUserInfo(false);
-            FullCustomPullClient?.ClearUserInfo(false);
             FullCustomRPInitiatedClient?.ClearUserInfo(false);
             Request.GetOwinContext().Authentication.SignOut();
         }

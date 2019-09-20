@@ -105,22 +105,12 @@ After the client (mobile) app generates the message, it sends it to the server (
 
 ### Identity Registration Verification flow
 
-There are different methods for verification of an identity when registering it to the Platform
-- standard email verification - the user enters the identity email, receives an email with a link to our Platform which, after a click, verifies the identity
-- custom email verification - the user enters the identity email, receives an email with a link to the Relying Party app where could be a custom logic for identity verification
-- full custom verification which supports two user notification types
-		- push - after the user has started the identity registration, the Platform sends a request to the Verification URL set by the customer in his/her Platform account settings where the identity is verified and activated for further PIN setup
-		- pull - after the user has started the identity registration, the Relying Party application sends a request to the Platform to know if a registration for this identity has started. If so, a custom logic for its validating could be applied before activating it and continuing to setup PIN
-		- RP initiated - the user starts the identity registration, the RP calls `GetRPInitiatedAuthUriAsync` method which initiates the identity activation and then continue to setup PIN
+There are two methods for verification of an identity when registering it to the Platform:
+ - standard email verification - the user enters the identity email, receives an email with a link to our Platform which, after a click, verifies the identity
+ - custom verification - the user starts the identity registration, the RP calls `GetRPInitiatedAuthUriAsync` method which initiates the identity activation and then continue to setup PIN
+   - `GetRPInitiatedAuthUriAsync` - initiates the identity activation and returns the authentication url the RP should redirects to in order to continue the RP initiated identity registration PIN setup
 
-There are fields in the Platform customer settings for setting up the Verification Method, the New User Notification Type (if a Full Custom method is set) and one for the Verification URL (if a Full Custom Push or Custom Email verification method is used).
-The methods which the Relying Party application should use to facilitate these operations are as follows:
-- `GetIdentityInfoAsync` - used to require identity information per its `hashMPinId` and `activateKey`
-- `ActivateIdentityAsync` - activates the identity in the Platform and the user could continue its registration and setup a PIN
-- `HandleNewIdentityPushAsync` - validates the request from the Platform when Full Custom Verification with Push type used and return an `Identity` object
-- `HandleNewIdentityPullAsync` - requests from the Platform if there is a started registration for the specified identity id and returns an `Identity` for it if so
-- `ParseCustomEmailQueryString` - parses the query string for the Custom Email Verification and returns an `IdentityActivationParams` object
- - `GetRPInitiatedAuthUriAsync` - initiates the identity activation and returns the authentication url the RP should redirects to in order to continue the RP initiated identity registration PIN setup
+ The field Verification Method in the Platform customer settings is responsible for setting the verification method type.
 
 ## Samples
 

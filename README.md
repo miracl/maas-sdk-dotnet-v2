@@ -55,7 +55,7 @@ If the user is not authorized, (s)he should scan the qr barcode with his/her pho
  ```
 which when clicked should redirects you to the Miracl platform for authorization:
 ```
-var authorizationUri = await client.GetAuthorizationRequestUrlAsync(WebAppAbsoluteUri); 
+var authorizationUri = await client.GetAuthorizationRequestUrlAsync(WebAppAbsoluteUri);
 return Redirect(authorizationUri);
 ```
 or use the following method for RP initiated authorization (see [Authorization Flow section](https://github.com/miracl/maas-sdk-dotnet-v2/#authorization-flow) for more details):
@@ -80,7 +80,7 @@ Use `client.ClearUserInfo()` to clear user authorization status.
 ### Use PrerollId
 
 In order to use the PrerollId functionality in your web app, you should have an input where the user to enter it to:
-```	
+```
 <input type="email" id="email" name="email" placeholder="Email Address (Preroll Id)" />
 ```
 Its value should be added as part of the authorization url query string as follows:
@@ -123,7 +123,7 @@ Note that the redirect uri, if not explicitly specified in the `MiraclAuthentica
 * `demo` is used for integration testing and is part of a separate solution (`Integration.sln`) and it is not supposed to be run manually
 
 ## Sample Endpoints
-The `MiraclAuthenticationApp` sample handles the following requests in order to serve as an authenticator for a mobile app:
+The `MiraclAuthenticationApp` sample handles the following requests in order to support authentication for a mobile app:
 * POST `/authzurl`
  This returns an http status of OK and data in the following json format:
 ```

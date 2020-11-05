@@ -483,7 +483,7 @@ namespace MiraclAuthenticationTests
                                Throws.TypeOf<ArgumentException>().And.Message.Contains("Cannot read public key"));
 
             mockHttp.Clear();
-            mockHttp.When(System.Net.Http.HttpMethod.Get, DvsPubKeysEndpoint).Respond(HttpStatusCode.OK, null);
+            mockHttp.When(System.Net.Http.HttpMethod.Get, DvsPubKeysEndpoint).Respond(HttpStatusCode.OK);
 
             Assert.That(() => client.GetAuthorizationRequestUrlAsync(Endpoint),
                                Throws.TypeOf<ArgumentException>().And.Message.Contains("Cannot read public key"));

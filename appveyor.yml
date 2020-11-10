@@ -1,5 +1,7 @@
-version: '#{build}'
-image: Visual Studio 2017
+version: 1.0.{build}
+image: Visual Studio 2019
+build:
+  verbosity: minimal
 
 configuration: Release
 
@@ -34,5 +36,8 @@ build_script:
 
 test_script:
   - cmd: |
+      echo "THE TOKEN IS: "
+      echo %COVERALLS_REPO_TOKEN%
+      echo ${{ secrets.COVERALLS_REPO_TOKEN }}
       %OPENCOVER_EXE% -target:nunit3-console.exe -targetargs:".\MiraclAuthenticationTests\bin\Release\MiraclAuthenticationTests.dll" -filter:"%COVERAGE_FILTER%" -register:user -returntargetcode -output:%COVERAGE_DIR%\coverage.xml
       %COVERALLS_NET_EXE% --opencover -i %COVERAGE_DIR%\coverage.xml --serviceName appveyor --useRelativePaths --jobId %APPVEYOR_BUILD_NUMBER%
